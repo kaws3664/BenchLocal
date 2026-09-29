@@ -395,7 +395,7 @@ export BENCHLOCAL_AGENT_TOKEN="<token from Settings > Agent Access>"
 {
   "config": {
     "schema_version": 1,
-    "ui": { "theme": "system" },
+    "ui": { "theme": "system", "language": "zh-CN" },
     "agent": { "enabled": true, "access": "localhost", "port": 50060 },
     "providers": {
       "huggingface": {
