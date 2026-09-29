@@ -154,12 +154,12 @@ function buildApplicationMenu(appName: string): void {
         { role: "about" },
         { type: "separator" },
         {
-          label: "Settings",
+          label: "设置",
           accelerator: "CmdOrCtrl+,",
           click: openSettings
         },
         {
-          label: "Check for Updates…",
+          label: "检查更新…",
           click: checkForUpdates
         },
         { role: "services" },
@@ -169,23 +169,23 @@ function buildApplicationMenu(appName: string): void {
         { role: "unhide" },
         { type: "separator" },
         {
-          label: `Quit ${appName}`,
+          label: `退出 ${appName}`,
           accelerator: "Cmd+Q",
           click: requestAppQuit
         }
       ]
     : [
         {
-          label: `About ${appName}`,
+          label: `关于 ${appName}`,
           click: openAbout
         },
         {
-          label: "Settings",
+          label: "设置",
           accelerator: "CmdOrCtrl+,",
           click: openSettings
         },
         {
-          label: "Check for Updates…",
+          label: "检查更新…",
           click: checkForUpdates
         },
         ...(isDev
@@ -196,7 +196,7 @@ function buildApplicationMenu(appName: string): void {
           : []),
         { type: "separator" },
         {
-          label: "Quit",
+          label: "退出",
           accelerator: "CmdOrCtrl+Q",
           click: requestAppQuit
         }
@@ -210,7 +210,7 @@ function buildApplicationMenu(appName: string): void {
       submenu: appSubmenu
     },
     {
-      label: "Edit",
+      label: "编辑",
       submenu: [
         { role: "undo" },
         { role: "redo" },
@@ -224,7 +224,7 @@ function buildApplicationMenu(appName: string): void {
     ...(isMac
       ? [
           {
-            label: "View",
+            label: "视图",
             submenu: [
               ...(isDev ? [{ role: "reload" as const }, { role: "forceReload" as const }, { role: "toggleDevTools" as const }, { type: "separator" as const }] : []),
               { role: "resetZoom" as const },
@@ -237,7 +237,7 @@ function buildApplicationMenu(appName: string): void {
         ]
       : []),
     {
-      label: "Window",
+      label: "窗口",
       submenu: windowSubmenu
     }
   ];

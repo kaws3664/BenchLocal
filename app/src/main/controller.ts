@@ -103,7 +103,7 @@ const PROVIDER_KIND_LABELS: Record<BenchLocalProviderKind, string> = {
   mlx: "MLX",
   lmstudio: "LM Studio",
   pico: "Pico",
-  openai_compatible: "OpenAI Compatible"
+  openai_compatible: "OpenAI 兼容"
 };
 
 function defaultProviderName(kind: BenchLocalProviderKind): string {
@@ -114,7 +114,7 @@ function fallbackProviderDisplayName(providerId: string): string {
   const trimmed = providerId.trim();
 
   if (/^openai[_-]compatible-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)) {
-    return "OpenAI Compatible";
+    return "OpenAI 兼容";
   }
 
   switch (trimmed) {
@@ -133,7 +133,7 @@ function fallbackProviderDisplayName(providerId: string): string {
     case "pico":
       return "Pico";
     default:
-      return trimmed || "Unknown Provider";
+      return trimmed || "未知提供商";
   }
 }
 
@@ -149,7 +149,7 @@ function normalizeRequiredString(value: unknown, field: string): string {
   const normalized = normalizeOptionalString(value);
 
   if (!normalized) {
-    throw new Error(`${field} is required.`);
+    throw new Error(`${field} 为必填项。`);
   }
 
   return normalized;
@@ -161,14 +161,14 @@ function normalizeOptionalBoolean(value: unknown, fallback: boolean, field: stri
   }
 
   if (typeof value !== "boolean") {
-    throw new Error(`${field} must be a boolean.`);
+    throw new Error(`${field} 必须是布尔值。`);
   }
 
   return value;
 }
 
 function createCopyLabel(label: string, existingLabels: string[]): string {
-  const base = `${label.trim() || "Untitled"} Copy`;
+  const base = `${label.trim() || "未命名"} 副本`;
   const existing = new Set(existingLabels.map((candidate) => candidate.trim()));
 
   if (!existing.has(base)) {
@@ -283,7 +283,7 @@ function buildModelConfig(
     id: normalizeOptionalString(input.id) ?? `${provider}:${model}`,
     provider,
     model,
-    label: normalizeOptionalString(input.label) ?? `${model} via ${providerLabel}`,
+    label: normalizeOptionalString(input.label) ?? `${model}（${providerLabel}）`,
     group: normalizeOptionalString(input.group) ?? "primary",
     enabled: normalizeOptionalBoolean(input.enabled, true, "enabled")
   };
@@ -336,15 +336,15 @@ function formatModelPricing(value: unknown): string | undefined {
     typeof record.completion === "string" || typeof record.completion === "number" ? String(record.completion) : null;
 
   if (prompt && completion) {
-    return `In ${prompt} · Out ${completion}`;
+    return `输入 ${prompt} · 输出 ${completion}`;
   }
 
   if (prompt) {
-    return `Prompt ${prompt}`;
+    return `提示词 ${prompt}`;
   }
 
   if (completion) {
-    return `Completion ${completion}`;
+    return `补全 ${completion}`;
   }
 
   return undefined;
@@ -613,7 +613,7 @@ function createWebInferenceRequestBody(input: BenchLocalChatRequest, model: Benc
 }
 
 function createAbortErrorMessage(timeoutMs: number): string {
-  return `Provider did not respond within ${Math.ceil(timeoutMs / 1000)} seconds.`;
+  return `提供商在 ${Math.ceil(timeoutMs / 1000)} 秒内未响应。`;
 }
 
 async function fetchWithAbortTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
@@ -848,7 +848,7 @@ export class BenchLocalController {
     const { providerId, provider } = normalizeProviderConfig(input, nextConfig.providers);
 
     if (nextConfig.providers[providerId]) {
-      throw new Error(`Provider "${getProviderDisplayName(nextConfig.providers, providerId)}" already exists.`);
+      throw new Error(`提供商 "${getProviderDisplayName(nextConfig.providers, providerId)}" 已存在。`);
     }
 
     nextConfig.providers[providerId] = provider;
@@ -868,7 +868,7 @@ export class BenchLocalController {
     const provider = nextConfig.providers[providerId];
 
     if (!provider) {
-      throw new Error(`Provider "${fallbackProviderDisplayName(providerId)}" was not found.`);
+      throw new Error(`未找到提供商 "${fallbackProviderDisplayName(providerId)}"。`);
     }
 
     nextConfig.providers[providerId] = patchProviderConfig(provider, input);
@@ -886,7 +886,7 @@ export class BenchLocalController {
     const { config } = await loadOrCreateConfig();
 
     if (!config.providers[providerId]) {
-      throw new Error(`Provider "${fallbackProviderDisplayName(providerId)}" was not found.`);
+      throw new Error(`未找到提供商 "${fallbackProviderDisplayName(providerId)}"。`);
     }
 
     const nextConfig = structuredClone(config);
@@ -913,7 +913,7 @@ export class BenchLocalController {
     const provider = config.providers[providerId];
 
     if (!provider) {
-      throw new Error(`Provider "${fallbackProviderDisplayName(providerId)}" was not found.`);
+      throw new Error(`未找到提供商 "${fallbackProviderDisplayName(providerId)}"。`);
     }
 
     const nextConfig = structuredClone(config);
@@ -941,7 +941,7 @@ export class BenchLocalController {
     const provider = config.providers[providerId];
 
     if (!provider) {
-      throw new Error(`Provider "${fallbackProviderDisplayName(providerId)}" was not found.`);
+      throw new Error(`未找到提供商 "${fallbackProviderDisplayName(providerId)}"。`);
     }
 
     return this.discoverProviderModels(provider);
@@ -953,11 +953,11 @@ export class BenchLocalController {
     const model = buildModelConfig(input, nextConfig.providers);
 
     if (!nextConfig.providers[model.provider]) {
-      throw new Error(`Model provider "${fallbackProviderDisplayName(model.provider)}" does not exist yet.`);
+      throw new Error(`模型提供商 "${fallbackProviderDisplayName(model.provider)}" 尚不存在。`);
     }
 
     if (nextConfig.models.some((candidate) => candidate.id === model.id)) {
-      throw new Error(`Model "${model.id}" already exists.`);
+      throw new Error(`模型 "${model.id}" 已存在。`);
     }
 
     nextConfig.models.push(model);
@@ -976,17 +976,17 @@ export class BenchLocalController {
     const index = nextConfig.models.findIndex((model) => model.id === modelId);
 
     if (index < 0) {
-      throw new Error(`Model "${modelId}" was not found.`);
+      throw new Error(`未找到模型 "${modelId}"。`);
     }
 
     const model = patchModelConfig(nextConfig.models[index], input, nextConfig.providers);
 
     if (!nextConfig.providers[model.provider]) {
-      throw new Error(`Model provider "${fallbackProviderDisplayName(model.provider)}" does not exist yet.`);
+      throw new Error(`模型提供商 "${fallbackProviderDisplayName(model.provider)}" 尚不存在。`);
     }
 
     if (nextConfig.models.some((candidate, candidateIndex) => candidateIndex !== index && candidate.id === model.id)) {
-      throw new Error(`Model "${model.id}" already exists.`);
+      throw new Error(`模型 "${model.id}" 已存在。`);
     }
 
     nextConfig.models[index] = model;
@@ -1010,7 +1010,7 @@ export class BenchLocalController {
     const index = nextConfig.models.findIndex((model) => model.id === modelId);
 
     if (index < 0) {
-      throw new Error(`Model "${modelId}" was not found.`);
+      throw new Error(`未找到模型 "${modelId}"。`);
     }
 
     const [removedModel] = nextConfig.models.splice(index, 1);
@@ -1029,7 +1029,7 @@ export class BenchLocalController {
     const model = config.models.find((candidate) => candidate.id === modelId);
 
     if (!model) {
-      throw new Error(`Model "${modelId}" was not found.`);
+      throw new Error(`未找到模型 "${modelId}"。`);
     }
 
     const nextConfig = structuredClone(config);
@@ -1054,7 +1054,7 @@ export class BenchLocalController {
 
   async discoverProviderModels(provider: BenchLocalProviderConfig): Promise<BenchLocalDiscoveredModel[]> {
     if (!providerSupportsModelDiscovery(provider)) {
-      throw new Error(`${provider.name} does not support model browsing yet.`);
+      throw new Error(`${provider.name} 暂不支持浏览模型。`);
     }
 
     const headers = new Headers({
@@ -1072,7 +1072,7 @@ export class BenchLocalController {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to load models from ${provider.name}: ${response.status} ${response.statusText}`.trim());
+      throw new Error(`无法从 ${provider.name} 加载模型：${response.status} ${response.statusText}`.trim());
     }
 
     const payload = (await response.json()) as { data?: unknown[] } | unknown[];
@@ -1184,11 +1184,11 @@ export class BenchLocalController {
     const manifest = inspection?.manifest;
 
     if (!manifest) {
-      throw new Error(`Bench Pack "${benchPackId}" was not found.`);
+      throw new Error(`未找到基准包 "${benchPackId}"。`);
     }
 
     if ((manifest.type ?? "table") !== "web") {
-      throw new Error(`Bench Pack "${benchPackId}" is not an interactive Web Bench Pack.`);
+      throw new Error(`基准包 "${benchPackId}" 不是交互式 Web 基准包。`);
     }
 
     return manifest;
@@ -1202,21 +1202,21 @@ export class BenchLocalController {
     const model = config.models.find((candidate) => candidate.id === input.modelId && candidate.enabled);
 
     if (!model) {
-      throw new Error(`Model "${input.modelId}" is not enabled in BenchLocal.`);
+      throw new Error(`模型 "${input.modelId}" 未在 BenchLocal 中启用。`);
     }
 
     const provider = config.providers[model.provider];
 
     if (!provider) {
-      throw new Error(`Provider "${fallbackProviderDisplayName(model.provider)}" was not found.`);
+      throw new Error(`未找到提供商 "${fallbackProviderDisplayName(model.provider)}"。`);
     }
 
     if (!provider.enabled) {
-      throw new Error(`Provider "${getProviderDisplayName(config.providers, model.provider)}" is disabled.`);
+      throw new Error(`提供商 "${getProviderDisplayName(config.providers, model.provider)}" 已被禁用。`);
     }
 
     if ((provider.api_key || provider.api_key_env) && !getProviderApiKey(provider)) {
-      throw new Error(`Provider "${getProviderDisplayName(config.providers, model.provider)}" requires an API key, but no secret is available.`);
+      throw new Error(`提供商 "${getProviderDisplayName(config.providers, model.provider)}" 需要 API 密钥，但未提供可用的密钥。`);
     }
 
     return { provider, model };
@@ -1235,7 +1235,7 @@ export class BenchLocalController {
     );
 
     if (!response.ok) {
-      throw new Error(`Provider request failed with ${response.status}.`);
+      throw new Error(`提供商请求失败（HTTP ${response.status}）。`);
     }
 
     return normalizeChatResponse(input.modelId, await response.json());
@@ -1257,7 +1257,7 @@ export class BenchLocalController {
       const event: BenchLocalChatStreamEvent = {
         type: "error",
         modelId: input.modelId,
-        message: `Provider request failed with ${response.status}.`,
+        message: `提供商请求失败（HTTP ${response.status}）。`,
         retryable: response.status === 408 || response.status === 409 || response.status === 425 || response.status === 429 || response.status >= 500
       };
       await onEvent(event);
@@ -1396,7 +1396,7 @@ export class BenchLocalController {
       modelCount: modelIds.length,
       scenarioCount: existing?.scenarioCount ?? 0,
       cancelled: nextPayload.status === "cancelled",
-      error: nextPayload.status === "error" ? existing?.error ?? "Web Bench Pack reported an error." : undefined,
+      error: nextPayload.status === "error" ? existing?.error ?? "Web 基准包报告了一个错误。" : undefined,
       events: existing?.events ?? [],
       resultsByModel: existing?.resultsByModel ?? Object.fromEntries(modelIds.map((modelId) => [modelId, []])),
       scores: nextPayload.score ? { [scoreModelId]: nextPayload.score } : existing?.scores ?? {},
@@ -1427,7 +1427,7 @@ export class BenchLocalController {
     const artifactRoot = path.resolve(runDir, "artifacts");
 
     if (!targetPath.startsWith(`${artifactRoot}${path.sep}`) && targetPath !== artifactRoot) {
-      throw new Error("Artifact path must stay inside the run artifacts directory.");
+      throw new Error("产物路径必须位于运行产物目录内。");
     }
 
     await fs.mkdir(path.dirname(targetPath), { recursive: true });
@@ -1468,7 +1468,7 @@ export class BenchLocalController {
       if (existingActiveStart.controller.signal.aborted) {
         await this.waitForVerifierStartRelease(benchPackId);
       } else {
-        throw new Error(`Verifier startup is already active for Bench Pack "${benchPackId}".`);
+        throw new Error(`基准包 "${benchPackId}" 的验证器已在启动中。`);
       }
     }
 
@@ -1515,7 +1515,7 @@ export class BenchLocalController {
       return { cancelled: false };
     }
 
-    activeStart.controller.abort(new Error("Verifier start cancelled by user."));
+    activeStart.controller.abort(new Error("验证器启动已被用户取消。"));
     return { cancelled: true };
   }
 
@@ -1540,7 +1540,7 @@ export class BenchLocalController {
     const activeRun = this.activeBenchPackRuns.get(input.tabId);
 
     if (!activeRun) {
-      throw new Error("Benchmark run slot was not initialized.");
+      throw new Error("基准运行尚未初始化。");
     }
 
     try {
@@ -1695,7 +1695,7 @@ export class BenchLocalController {
     const activeRun = this.activeBenchPackRuns.get(input.tabId);
 
     if (!activeRun) {
-      throw new Error("Benchmark run slot was not initialized.");
+      throw new Error("基准运行尚未初始化。");
     }
 
     try {
@@ -1742,7 +1742,7 @@ export class BenchLocalController {
       return { stopped: false };
     }
 
-    activeRun.controller.abort(new Error("Run cancelled by user."));
+    activeRun.controller.abort(new Error("运行已被用户取消。"));
     return { stopped: true };
   }
 
@@ -1757,11 +1757,11 @@ export class BenchLocalController {
     }
 
     for (const activeRun of this.activeBenchPackRuns.values()) {
-      activeRun.controller.abort(new Error("Run cancelled because BenchLocal is shutting down."));
+      activeRun.controller.abort(new Error("运行已取消，因为 BenchLocal 正在关闭。"));
     }
 
     for (const activeStart of this.activeVerifierStarts.values()) {
-      activeStart.controller.abort(new Error("Verifier start cancelled because BenchLocal is shutting down."));
+      activeStart.controller.abort(new Error("验证器启动已取消，因为 BenchLocal 正在关闭。"));
     }
 
     const timeoutMs = options?.timeoutMs ?? 15000;
@@ -1770,7 +1770,7 @@ export class BenchLocalController {
 
     while (this.activeBenchPackRuns.size > 0 || this.activeVerifierStarts.size > 0) {
       if (Date.now() >= deadline) {
-        throw new Error("Timed out while waiting for active Bench Pack work to stop.");
+        throw new Error("等待活动基准包任务停止超时。");
       }
 
       await new Promise((resolve) => setTimeout(resolve, intervalMs));
@@ -1791,7 +1791,7 @@ export class BenchLocalController {
       const workspace = state.workspaces[workspaceId];
 
       if (!workspace) {
-        throw new Error(`Workspace "${workspaceId}" was not found.`);
+        throw new Error(`未找到工作区 "${workspaceId}"。`);
       }
 
       const now = new Date().toISOString();
@@ -1800,7 +1800,7 @@ export class BenchLocalController {
 
       state.tabs[tabId] = {
         id: tabId,
-        title: input.title?.trim() || (benchPackId ? this.createTabTitle(benchPackId) : "New Tab"),
+        title: input.title?.trim() || (benchPackId ? this.createTabTitle(benchPackId) : "新建标签页"),
         benchPackId,
         loadedRunId: null,
         focusedScenarioId: null,
@@ -1836,11 +1836,11 @@ export class BenchLocalController {
       const tab = state.tabs[tabId];
 
       if (!tab) {
-        throw new Error(`Tab "${tabId}" was not found.`);
+        throw new Error(`未找到标签页 "${tabId}"。`);
       }
 
       if (patch.title !== undefined) {
-        tab.title = patch.title.trim() || "New Tab";
+        tab.title = patch.title.trim() || "新建标签页";
       }
 
       if (patch.focusedScenarioId !== undefined) {
@@ -1873,14 +1873,14 @@ export class BenchLocalController {
       const tab = state.tabs[tabId];
 
       if (!tab) {
-        throw new Error(`Tab "${tabId}" was not found.`);
+        throw new Error(`未找到标签页 "${tabId}"。`);
       }
 
       const normalizedBenchPackId = benchPackId?.trim() || null;
       tab.benchPackId = normalizedBenchPackId;
       tab.loadedRunId = null;
       tab.focusedScenarioId = null;
-      tab.title = title?.trim() || (normalizedBenchPackId ? this.createTabTitle(normalizedBenchPackId) : "New Tab");
+      tab.title = title?.trim() || (normalizedBenchPackId ? this.createTabTitle(normalizedBenchPackId) : "新建标签页");
       tab.updatedAt = new Date().toISOString();
 
       return state;
@@ -1894,7 +1894,7 @@ export class BenchLocalController {
       const tab = state.tabs[tabId];
 
       if (!tab) {
-        throw new Error(`Tab "${tabId}" was not found.`);
+        throw new Error(`未找到标签页 "${tabId}"。`);
       }
 
       tab.modelSelections = input.selections
@@ -1969,7 +1969,7 @@ export class BenchLocalController {
       if (existingActiveRun.controller.signal.aborted) {
         await this.waitForBenchPackRunRelease(tabId);
       } else {
-        throw new Error("A benchmark run is already active for this tab.");
+        throw new Error("该标签页已有一个基准运行在进行中。");
       }
     }
 
@@ -1985,7 +1985,7 @@ export class BenchLocalController {
 
     while (this.activeBenchPackRuns.has(tabId)) {
       if (Date.now() >= deadline) {
-        throw new Error("The previous benchmark run is still shutting down. Please wait a moment and try again.");
+        throw new Error("上一次基准运行仍在关闭中，请稍候再试。");
       }
 
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -1997,7 +1997,7 @@ export class BenchLocalController {
 
     while (this.activeVerifierStarts.has(benchPackId)) {
       if (Date.now() >= deadline) {
-        throw new Error(`Timed out while waiting for verifier startup "${benchPackId}" to stop.`);
+        throw new Error(`等待验证器启动 "${benchPackId}" 停止超时。`);
       }
 
       await new Promise((resolve) => setTimeout(resolve, 50));

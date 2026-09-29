@@ -45,8 +45,8 @@ function createInitialUpdateState(): BenchLocalUpdateState {
     feedUrl: support.feedUrl,
     message: support.supported
       ? support.feedSource === "generic"
-        ? "BenchLocal can check for updates using a local test feed."
-        : "BenchLocal can check for updates."
+        ? "BenchLocal 可以通过本地测试源检查更新。"
+        : "BenchLocal 可以检查更新。"
       : support.message
   };
 }
@@ -66,7 +66,7 @@ function resolveConfiguredUpdateFeed(): SupportedUpdateSupport | UnsupportedUpda
     const parsed = new URL(overrideUrl);
 
     if (!["http:", "https:"].includes(parsed.protocol)) {
-      throw new Error("Local update feed must use http:// or https://.");
+      throw new Error("本地更新源必须使用 http:// 或 https://。");
     }
 
     if (!parsed.pathname.endsWith("/")) {
@@ -78,7 +78,7 @@ function resolveConfiguredUpdateFeed(): SupportedUpdateSupport | UnsupportedUpda
     return {
       supported: true,
       feedSource: "generic",
-      feedLabel: "Local Test Feed",
+      feedLabel: "本地测试源",
       feedUrl: parsed.toString(),
       channel
     };
@@ -88,9 +88,9 @@ function resolveConfiguredUpdateFeed(): SupportedUpdateSupport | UnsupportedUpda
       message:
         error instanceof Error && error.message.trim()
           ? error.message.trim()
-          : "BENCHLOCAL_UPDATE_URL must be a valid http:// or https:// URL.",
+          : "BENCHLOCAL_UPDATE_URL 必须是有效的 http:// 或 https:// URL。",
       feedSource: "generic",
-      feedLabel: "Local Test Feed",
+      feedLabel: "本地测试源",
       feedUrl: overrideUrl
     };
   }
@@ -100,7 +100,7 @@ function resolveUpdateSupport(): SupportedUpdateSupport | UnsupportedUpdateSuppo
   if (!app.isPackaged) {
     return {
       supported: false,
-      message: "Self-update is only available in packaged BenchLocal builds.",
+      message: "自更新仅在打包后的 BenchLocal 构建中可用。",
       feedSource: "github",
       feedLabel: "GitHub Releases"
     };
@@ -109,7 +109,7 @@ function resolveUpdateSupport(): SupportedUpdateSupport | UnsupportedUpdateSuppo
   if (process.platform === "linux" && !process.env.APPIMAGE) {
     return {
       supported: false,
-      message: "Self-update on Linux requires running the AppImage build.",
+      message: "Linux 上的自更新需要运行 AppImage 构建。",
       feedSource: "github",
       feedLabel: "GitHub Releases"
     };
@@ -138,14 +138,14 @@ function configureAutoUpdaterFeed(support: SupportedUpdateSupport): void {
 
 function formatUpdateError(error: unknown): string {
   if (error instanceof Error) {
-    return error.message.trim() || "BenchLocal could not complete the update request.";
+    return error.message.trim() || "BenchLocal 无法完成更新请求。";
   }
 
   if (typeof error === "string" && error.trim()) {
     return error.trim();
   }
 
-  return "BenchLocal could not complete the update request.";
+  return "BenchLocal 无法完成更新请求。";
 }
 
 function serializeReleaseNotes(releaseNotes: unknown): string | undefined {
@@ -227,7 +227,7 @@ function registerUpdaterEventHandlers(): void {
       bytesPerSecond: undefined,
       transferred: undefined,
       total: undefined,
-      message: "Checking for BenchLocal updates."
+      message: "正在检查 BenchLocal 更新。"
     });
   });
 
@@ -239,7 +239,7 @@ function registerUpdaterEventHandlers(): void {
       bytesPerSecond: undefined,
       transferred: undefined,
       total: undefined,
-      message: info.version ? `BenchLocal ${info.version} is available. Downloading update.` : "A BenchLocal update is available. Downloading update."
+      message: info.version ? `BenchLocal ${info.version} 已发布，正在下载更新。` : "发现 BenchLocal 更新，正在下载。"
     });
   });
 
@@ -252,8 +252,8 @@ function registerUpdaterEventHandlers(): void {
       transferred: progress.transferred,
       total: progress.total,
       message: version
-        ? `Downloading BenchLocal ${version} (${Math.round(progress.percent)}%).`
-        : `Downloading BenchLocal update (${Math.round(progress.percent)}%).`
+        ? `正在下载 BenchLocal ${version}（${Math.round(progress.percent)}%）。`
+        : `正在下载 BenchLocal 更新（${Math.round(progress.percent)}%）。`
     });
   });
 
@@ -265,8 +265,8 @@ function registerUpdaterEventHandlers(): void {
       transferred: undefined,
       total: undefined,
       message: info.version
-        ? `BenchLocal ${info.version} is ready to install.`
-        : "A BenchLocal update is ready to install."
+        ? `BenchLocal ${info.version} 已准备好安装。`
+        : "BenchLocal 更新已准备好安装。"
     });
   });
 
@@ -282,7 +282,7 @@ function registerUpdaterEventHandlers(): void {
       bytesPerSecond: undefined,
       transferred: undefined,
       total: undefined,
-      message: "BenchLocal is up to date."
+      message: "BenchLocal 已是最新版本。"
     });
   });
 
@@ -369,7 +369,7 @@ export async function checkForAppUpdates(): Promise<BenchLocalUpdateState> {
         bytesPerSecond: undefined,
         transferred: undefined,
         total: undefined,
-        message: `BenchLocal ${nextVersion} is available. Downloading update.`
+        message: `BenchLocal ${nextVersion} 已发布，正在下载更新。`
       });
     }
 
@@ -386,8 +386,8 @@ export async function checkForAppUpdatesInteractively(): Promise<void> {
   if (!support.supported) {
     await dialog.showMessageBox(focusedWindow ?? undefined, {
       type: "info",
-      buttons: ["OK"],
-      message: "Self-update unavailable",
+      buttons: ["确定"],
+      message: "无法自更新",
       detail: support.message
     });
     return;
@@ -396,8 +396,8 @@ export async function checkForAppUpdatesInteractively(): Promise<void> {
   if (appUpdateState.status === "checking") {
     await dialog.showMessageBox(focusedWindow ?? undefined, {
       type: "info",
-      buttons: ["OK"],
-      message: "BenchLocal is already checking for updates."
+      buttons: ["确定"],
+      message: "BenchLocal 已在检查更新。"
     });
     return;
   }
@@ -405,10 +405,10 @@ export async function checkForAppUpdatesInteractively(): Promise<void> {
   if (appUpdateState.status === "downloading" || appUpdateState.status === "available") {
     await dialog.showMessageBox(focusedWindow ?? undefined, {
       type: "info",
-      buttons: ["OK"],
+      buttons: ["确定"],
       message: appUpdateState.availableVersion
-        ? `BenchLocal ${appUpdateState.availableVersion} is already downloading.`
-        : "BenchLocal is already downloading an update."
+        ? `BenchLocal ${appUpdateState.availableVersion} 正在下载中。`
+        : "BenchLocal 已在下载更新。"
     });
     return;
   }
@@ -416,13 +416,13 @@ export async function checkForAppUpdatesInteractively(): Promise<void> {
   if (appUpdateState.status === "downloaded") {
     const response = await dialog.showMessageBox(focusedWindow ?? undefined, {
       type: "info",
-      buttons: ["Restart to Update", "Later"],
+      buttons: ["重启以更新", "稍后"],
       defaultId: 0,
       cancelId: 1,
       message: appUpdateState.downloadedVersion
-        ? `BenchLocal ${appUpdateState.downloadedVersion} is ready to install.`
-        : "A BenchLocal update is ready to install.",
-      detail: "Restart BenchLocal to apply the downloaded update."
+        ? `BenchLocal ${appUpdateState.downloadedVersion} 已准备好安装。`
+        : "BenchLocal 更新已准备好安装。",
+      detail: "重启 BenchLocal 以应用已下载的更新。"
     });
 
     if (response.response === 0) {
@@ -438,9 +438,9 @@ export async function checkForAppUpdatesInteractively(): Promise<void> {
     if (state.status === "not_available") {
       await dialog.showMessageBox(focusedWindow ?? undefined, {
         type: "info",
-        buttons: ["OK"],
-        message: "BenchLocal is up to date.",
-        detail: `Current version: ${state.currentVersion}`
+        buttons: ["确定"],
+        message: "BenchLocal 已是最新版本。",
+        detail: `当前版本：${state.currentVersion}`
       });
       return;
     }
@@ -448,20 +448,20 @@ export async function checkForAppUpdatesInteractively(): Promise<void> {
     if (state.status === "available" || state.status === "downloading") {
       await dialog.showMessageBox(focusedWindow ?? undefined, {
         type: "info",
-        buttons: ["OK"],
+        buttons: ["确定"],
         message: state.availableVersion
-          ? `BenchLocal ${state.availableVersion} is downloading in the background.`
-          : "A BenchLocal update is downloading in the background."
+          ? `BenchLocal ${state.availableVersion} 正在后台下载。`
+          : "BenchLocal 更新正在后台下载。"
       });
     }
   } catch (error) {
-    dialog.showErrorBox("Update Check Failed", formatUpdateError(error));
+    dialog.showErrorBox("更新检查失败", formatUpdateError(error));
   }
 }
 
 export function installDownloadedAppUpdate(): { started: boolean } {
   if (appUpdateState.status !== "downloaded") {
-    throw new Error("No downloaded BenchLocal update is ready to install.");
+    throw new Error("没有已下载且可安装的 BenchLocal 更新。");
   }
 
   getAutoUpdater().quitAndInstall(false, true);

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "night",
-  "name": "Night",
+  "name": "夜色",
   "colorScheme": "dark",
   "variables": {
     "--theme-color-scheme": "dark",

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "black",
-  "name": "Black",
+  "name": "纯黑",
   "colorScheme": "dark",
   "variables": {
     "--theme-color-scheme": "dark",

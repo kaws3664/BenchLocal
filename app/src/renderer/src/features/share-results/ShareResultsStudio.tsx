@@ -55,7 +55,7 @@ function createInitialModelSelections(data: ShareResultsData): Record<ShareResul
 
 function scoreLabel(value: number | null): string {
   if (value === null) {
-    return "No score";
+    return "暂无得分";
   }
   return Number.isInteger(value) ? `${value}` : value.toFixed(1);
 }
@@ -315,9 +315,9 @@ export function ShareResultsStudio({
       >
         <header className="share-results-header">
           <div className="share-results-heading">
-            <span className="eyebrow">Share Results</span>
+            <span className="eyebrow">分享结果</span>
             <h2 id="share-results-title">{data.benchPackName}</h2>
-            <p>{data.models.length} models · {data.scenarioCount} scenarios · {data.runDateLabel}</p>
+            <p>{data.models.length} 个模型 · {data.scenarioCount} 个场景 · {data.runDateLabel}</p>
           </div>
           <div className="share-results-header-controls">
             <button
@@ -325,7 +325,7 @@ export function ShareResultsStudio({
               type="button"
               className="share-results-close"
               onClick={onClose}
-              aria-label="Close Share Results"
+              aria-label="关闭分享结果"
             >
               <X size={18} />
             </button>
@@ -337,7 +337,7 @@ export function ShareResultsStudio({
                 disabled={rendering || storyPending || Boolean(error)}
               >
                 {actionStatus === "copied" ? <Check size={15} /> : <Copy size={15} />}
-                {actionStatus === "copied" ? "Copied" : "Copy Image"}
+                {actionStatus === "copied" ? "已复制" : "复制图片"}
               </button>
               <button
                 type="button"
@@ -346,18 +346,18 @@ export function ShareResultsStudio({
                 disabled={rendering || storyPending || Boolean(error)}
               >
                 <ImageDown size={15} />
-                Save PNG
+                保存 PNG
               </button>
             </div>
           </div>
         </header>
 
         <div className="share-results-layout">
-          <aside className="share-results-controls" aria-label="Share image controls">
+          <aside className="share-results-controls" aria-label="分享图控制">
             <section className="share-results-control-section">
               <div className="share-results-section-heading">
-                <span>Chart</span>
-                <span>{chartDefinition.maxModels} models max</span>
+                <span>图表</span>
+                <span>最多 {chartDefinition.maxModels} 个模型</span>
               </div>
               <div className="share-results-choice-list">
                 {SHARE_RESULTS_CHARTS.map((chart) => {
@@ -384,7 +384,7 @@ export function ShareResultsStudio({
 
             <section className="share-results-control-section">
               <div className="share-results-section-heading">
-                <span>Format</span>
+                <span>格式</span>
                 <span>{format.width}×{format.height}</span>
               </div>
               <div className="share-results-format-grid">
@@ -402,14 +402,14 @@ export function ShareResultsStudio({
                   </button>
                 ))}
               </div>
-              <div className="share-results-theme-toggle" aria-label="Image theme">
+              <div className="share-results-theme-toggle" aria-label="图片主题">
                 <button
                   type="button"
                   className={theme === "dark" ? "is-active" : ""}
                   onClick={() => setTheme("dark")}
                   aria-pressed={theme === "dark"}
                 >
-                  <Moon size={14} /> Dark
+                  <Moon size={14} /> 深色
                 </button>
                 <button
                   type="button"
@@ -417,19 +417,19 @@ export function ShareResultsStudio({
                   onClick={() => setTheme("light")}
                   aria-pressed={theme === "light"}
                 >
-                  <Sun size={14} /> Light
+                  <Sun size={14} /> 浅色
                 </button>
               </div>
             </section>
 
             <section className="share-results-control-section">
               <div className="share-results-section-heading">
-                <span>Story</span>
-                <button type="button" className="share-results-text-action" onClick={resetStory}>Reset</button>
+                <span>文案</span>
+                <button type="button" className="share-results-text-action" onClick={resetStory}>重置</button>
               </div>
               <div className="share-results-story-fields">
                 <label className="share-results-story-field">
-                  <span>Title</span>
+                  <span>标题</span>
                   <input
                     type="text"
                     value={title}
@@ -439,17 +439,17 @@ export function ShareResultsStudio({
                   />
                 </label>
                 <label className="share-results-story-field">
-                  <span>Subtitle</span>
+                  <span>副标题</span>
                   <input
                     type="text"
                     value={subtitle}
                     maxLength={120}
-                    placeholder="Automatic run summary"
+                    placeholder="自动生成的运行摘要"
                     onChange={(event) => setSubtitle(event.target.value)}
                   />
                 </label>
                 <label className="share-results-story-field">
-                  <span>Insight</span>
+                  <span>洞察</span>
                   <input
                     type="text"
                     value={insight}
@@ -460,31 +460,31 @@ export function ShareResultsStudio({
                   />
                 </label>
                 <label className="share-results-story-field">
-                  <span>Footer note</span>
+                  <span>脚注</span>
                   <input
                     type="text"
                     value={footerNote}
                     maxLength={90}
-                    placeholder="Optional context"
+                    placeholder="可选补充说明"
                     onChange={(event) => setFooterNote(event.target.value)}
                   />
                 </label>
               </div>
-              <div className="share-results-detail-options" aria-label="Export details">
-                <label><input type="checkbox" checked={showInsight} onChange={(event) => setShowInsight(event.target.checked)} /> Insight</label>
-                <label><input type="checkbox" checked={showBranding} onChange={(event) => setShowBranding(event.target.checked)} /> Brand</label>
-                <label><input type="checkbox" checked={showDate} onChange={(event) => setShowDate(event.target.checked)} /> Date</label>
-                <label><input type="checkbox" checked={showRunDetails} onChange={(event) => setShowRunDetails(event.target.checked)} /> Runs</label>
-                <label><input type="checkbox" checked={showProviders} onChange={(event) => setShowProviders(event.target.checked)} /> Providers</label>
+              <div className="share-results-detail-options" aria-label="导出细节">
+                <label><input type="checkbox" checked={showInsight} onChange={(event) => setShowInsight(event.target.checked)} />洞察</label>
+                <label><input type="checkbox" checked={showBranding} onChange={(event) => setShowBranding(event.target.checked)} />品牌</label>
+                <label><input type="checkbox" checked={showDate} onChange={(event) => setShowDate(event.target.checked)} />日期</label>
+                <label><input type="checkbox" checked={showRunDetails} onChange={(event) => setShowRunDetails(event.target.checked)} />运行详情</label>
+                <label><input type="checkbox" checked={showProviders} onChange={(event) => setShowProviders(event.target.checked)} />提供商</label>
               </div>
             </section>
 
             <section className="share-results-control-section share-results-selection-section">
               <div className="share-results-section-heading">
-                <span>Models</span>
+                <span>模型</span>
                 <div className="share-results-heading-tools">
                   <span>{modelIds.length}/{chartDefinition.maxModels}</span>
-                  <button type="button" className="share-results-text-action" onClick={selectAllModels}>All</button>
+                  <button type="button" className="share-results-text-action" onClick={selectAllModels}>全部</button>
                 </div>
               </div>
               <div className="share-results-check-list">
@@ -513,7 +513,7 @@ export function ShareResultsStudio({
             {(chartType === "categories" || chartType === "radar") && data.categories.length > 0 ? (
               <section className="share-results-control-section share-results-selection-section">
                 <div className="share-results-section-heading">
-                  <span>Categories</span>
+                  <span>分类</span>
                   <span>{categoryIds.length}/8</span>
                 </div>
                 <div className="share-results-check-list">
@@ -540,10 +540,10 @@ export function ShareResultsStudio({
           <main className="share-results-preview-area">
             <div className="share-results-preview-toolbar">
               <div>
-                <span className="eyebrow">Static Preview</span>
+                <span className="eyebrow">静态预览</span>
                 <strong>{SHARE_RESULTS_CHARTS.find((chart) => chart.id === chartType)?.label}</strong>
               </div>
-              <span>{format.label} PNG · {theme}</span>
+              <span>{format.label} PNG · {theme === "dark" ? "深色" : "浅色"}</span>
             </div>
             <div className={`share-results-preview${rendering || storyPending ? " is-rendering" : ""}`}>
               <canvas
@@ -551,17 +551,17 @@ export function ShareResultsStudio({
                 width={format.width}
                 height={format.height}
                 role="img"
-                aria-label={`${data.benchPackName} combined ${chartType} share-image preview`}
+                aria-label={`${data.benchPackName} ${chartType} 组合分享图预览`}
               />
-              {rendering || storyPending ? <div className="share-results-rendering"><span className="spinner" /> Updating preview</div> : null}
+              {rendering || storyPending ? <div className="share-results-rendering"><span className="spinner" />正在更新预览</div> : null}
               {error ? <div className="share-results-error">{error}</div> : null}
             </div>
             <div className="share-results-preview-footer">
-              <span>Export size {format.width}×{format.height} PNG</span>
+              <span>导出尺寸 {format.width}×{format.height} PNG</span>
               <span>{getShareResultsFileName(data, options)}</span>
             </div>
             <span className="sr-only" aria-live="polite">
-              {actionStatus === "copied" ? "Image copied" : ""}
+              {actionStatus === "copied" ? "图片已复制" : ""}
             </span>
           </main>
         </div>

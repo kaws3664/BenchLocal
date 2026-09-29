@@ -110,20 +110,20 @@ export const SHARE_RESULTS_FORMATS: Record<
   { label: string; description: string; width: number; height: number }
 > = {
   social: {
-    label: "Social",
-    description: "2:1 landscape",
+    label: "社交",
+    description: "2:1 横图",
     width: 2400,
     height: 1260
   },
   presentation: {
-    label: "Presentation",
-    description: "16:9 slide",
+    label: "演示",
+    description: "16:9 幻灯片",
     width: 3200,
     height: 1800
   },
   square: {
-    label: "Square",
-    description: "1:1 post",
+    label: "方形",
+    description: "1:1 方图",
     width: 2160,
     height: 2160
   }
@@ -137,26 +137,26 @@ export const SHARE_RESULTS_CHARTS: Array<{
 }> = [
   {
     id: "overview",
-    label: "Overview",
-    description: "Ranked total scores",
+    label: "总览",
+    description: "总分排名",
     maxModels: 8
   },
   {
     id: "categories",
-    label: "Categories",
-    description: "Grouped category comparison",
+    label: "分类",
+    description: "分类分组对比",
     maxModels: 4
   },
   {
     id: "radar",
-    label: "Radar",
-    description: "Model capability profiles",
+    label: "雷达",
+    description: "模型能力画像",
     maxModels: 4
   },
   {
     id: "heatmap",
-    label: "Heatmap",
-    description: "Scenario-level outcomes",
+    label: "热力图",
+    description: "场景级结果",
     maxModels: 8
   }
 ];
@@ -194,7 +194,7 @@ function loadShareResultsAssets(): Promise<{ logo: HTMLImageElement | null }> {
 function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.valueOf())) {
-    return "Unknown date";
+    return "未知日期";
   }
 
   return new Intl.DateTimeFormat(undefined, {
@@ -231,23 +231,23 @@ function resultStatus(result: ScenarioResult | undefined): ShareResultStatus {
 function runModeLabel(value: BenchPackRunSummary["executionMode"]): string {
   switch (value) {
     case "serial":
-      return "Serial per Test Case";
+      return "按用例串行";
     case "serial_by_model":
-      return "Serial per Model";
+      return "按模型串行";
     case "parallel_by_model":
-      return "Parallel per Model";
+      return "按模型并行";
     case "full_parallel":
-      return "Parallel for All";
+      return "全部并行";
     case "parallel_by_test_case":
     default:
-      return "Parallel per Test Case";
+      return "按用例并行";
   }
 }
 
 function fallbackProviderName(providerId: string): string {
   return providerId
     .replaceAll("_", " ")
-    .replace(/\b\w/gu, (letter) => letter.toUpperCase()) || "Unknown Provider";
+    .replace(/\b\w/gu, (letter) => letter.toUpperCase()) || "未知提供商";
 }
 
 export function buildShareResultsData({
@@ -283,7 +283,7 @@ export function buildShareResultsData({
     const scenarioNumber = normalizedScenarios.length + 1;
     normalizedScenarios.push({
       id: `unrecorded-${scenarioNumber}`,
-      title: `Unrecorded scenario ${scenarioNumber}`
+      title: `未记录的场景 ${scenarioNumber}`
     });
   }
   const categoryMap = new Map<string, ShareResultsCategory>();
@@ -318,7 +318,7 @@ export function buildShareResultsData({
 
     const providerName = source
       ? providers[source.provider]?.name?.trim() || fallbackProviderName(source.provider)
-      : "Saved run";
+      : "已保存的运行";
     const modelIdentifier = source?.model?.trim() || modelId.split(":").slice(1).join(":") || modelId;
     const categoryScores = Object.fromEntries(score?.categories.map((category) => [category.id, category.score]) ?? []);
     const durations = results
@@ -422,14 +422,14 @@ function inferScaleMax(values: Array<number | null | undefined>): number {
 export function getShareResultsChartTitle(chartType: ShareResultsChartType): string {
   switch (chartType) {
     case "categories":
-      return "Category comparison";
+      return "分类对比";
     case "radar":
-      return "Capability profiles";
+      return "能力画像";
     case "heatmap":
-      return "Scenario outcomes";
+      return "场景结果";
     case "overview":
     default:
-      return "Model ranking";
+      return "模型排名";
   }
 }
 
@@ -441,13 +441,13 @@ export function buildShareResultsInsight(
   const models = data.models.filter((model) => selectedModelSet.has(model.id));
 
   if (models.length === 0) {
-    return "Select models to generate an insight";
+    return "选择模型以生成洞察";
   }
 
   if (options.chartType === "heatmap") {
     const leader = [...models].sort((left, right) => right.statusCounts.pass - left.statusCounts.pass)[0];
-    const scenarioLabel = data.scenarioCount === 1 ? "scenario" : "scenarios";
-    return `${leader.label} passes ${leader.statusCounts.pass} of ${data.scenarioCount} ${scenarioLabel}`;
+    const scenarioLabel = "场景";
+    return `${leader.label} 在 ${data.scenarioCount} 个${scenarioLabel}中通过了 ${leader.statusCounts.pass} 个`;
   }
 
   if (options.chartType === "categories" || options.chartType === "radar") {
@@ -465,7 +465,7 @@ export function buildShareResultsInsight(
     const leader = averages.sort((left, right) => right.average - left.average)[0];
 
     if (leader) {
-      return `${leader.model.label} has the strongest selected-category average at ${formatScore(leader.average)}`;
+      return `${leader.model.label} 的所选分类平均分最高：${formatScore(leader.average)}`;
     }
   }
 
@@ -476,19 +476,19 @@ export function buildShareResultsInsight(
   const runnerUp = ranked[1];
 
   if (!leader) {
-    return "Scores are not available for the selected models";
+    return "所选模型暂无得分";
   }
 
   if (!runnerUp) {
-    return `${leader.label} scores ${formatScore(leader.totalScore)}`;
+    return `${leader.label} 得分 ${formatScore(leader.totalScore)}`;
   }
 
   const lead = leader.totalScore - runnerUp.totalScore;
   if (lead === 0) {
-    return `${leader.label} and ${runnerUp.label} share the lead at ${formatScore(leader.totalScore)}`;
+    return `${leader.label} 与 ${runnerUp.label} 以 ${formatScore(leader.totalScore)} 分并列领先`;
   }
 
-  return `${leader.label} leads by ${formatScore(lead)} ${lead === 1 ? "point" : "points"}`;
+  return `${leader.label} 领先 ${formatScore(lead)} 分`;
 }
 
 function preserveChartFrame(canvas: HTMLCanvasElement, chart: Chart): void {
@@ -608,7 +608,7 @@ function renderBarChart({
         data: {
           labels: models.map((model) => model.label),
           datasets: [{
-            label: "Score",
+            label: "得分",
             data: models.map((model) => model.totalScore),
             backgroundColor: models.map((_, index) => modelColors[index % modelColors.length]),
             borderRadius: Math.round(9 * fontScale),
@@ -831,11 +831,11 @@ function renderHeatmap({
   });
 
   const legendEntries: Array<[ShareResultStatus, string]> = [
-    ["pass", "Pass"],
-    ["partial", "Partial"],
-    ["fail", "Fail"],
-    ["error", "Error"],
-    ["missing", "Missing"]
+    ["pass", "通过"],
+    ["partial", "部分"],
+    ["fail", "失败"],
+    ["error", "错误"],
+    ["missing", "缺失"]
   ];
   let legendX = x + labelWidth;
   const legendY = y + height - 24 * scale;
@@ -851,7 +851,7 @@ function renderHeatmap({
   if (scenarios.length > visibleScenarios.length) {
     ctx.textAlign = "right";
     ctx.fillStyle = palette.faint;
-    ctx.fillText(`+${scenarios.length - visibleScenarios.length} scenarios`, x + width, legendY);
+    ctx.fillText(`+${scenarios.length - visibleScenarios.length} 个场景`, x + width, legendY);
   }
   ctx.restore();
 }
@@ -878,7 +878,7 @@ export async function renderShareResultsCanvas(
   canvas.height = format.height;
   const ctx = canvas.getContext("2d");
   if (!ctx) {
-    throw new Error("Could not create the share-results canvas.");
+    throw new Error("无法创建分享结果画布。");
   }
 
   const scale = Math.min(format.width / 2400, format.height / 1260);
@@ -991,7 +991,7 @@ export async function renderShareResultsCanvas(
 
   ctx.font = `650 ${Math.round(30 * scale)}px "${DISPLAY_FONT_FAMILY}", sans-serif`;
   ctx.fillStyle = palette.muted;
-  const automaticSubtitle = `${models.length} model${models.length === 1 ? "" : "s"} · ${data.scenarioCount} scenarios · ${data.runModeLabel}${data.isIncomplete ? " · Incomplete run" : ""}`;
+  const automaticSubtitle = `${models.length} 个模型 · ${data.scenarioCount} 个场景 · ${data.runModeLabel}${data.isIncomplete ? " · 运行未完成" : ""}`;
   const subtitle = options.subtitle.trim() || automaticSubtitle;
   ctx.fillText(truncateText(ctx, subtitle, format.width - margin * 2), margin, margin + 298 * scale);
 
@@ -1021,13 +1021,13 @@ export async function renderShareResultsCanvas(
     ctx.font = `700 ${Math.round(38 * scale)}px "${DISPLAY_FONT_FAMILY}", sans-serif`;
     ctx.fillStyle = palette.muted;
     ctx.textAlign = "center";
-    ctx.fillText("Select at least one model", panelX + panelWidth / 2, panelY + panelHeight / 2);
+    ctx.fillText("请至少选择一个模型", panelX + panelWidth / 2, panelY + panelHeight / 2);
     ctx.textAlign = "left";
   } else if ((options.chartType === "categories" || options.chartType === "radar") && categories.length === 0) {
     ctx.font = `700 ${Math.round(38 * scale)}px "${DISPLAY_FONT_FAMILY}", sans-serif`;
     ctx.fillStyle = palette.muted;
     ctx.textAlign = "center";
-    ctx.fillText("No category scores are available", panelX + panelWidth / 2, panelY + panelHeight / 2);
+    ctx.fillText("暂无分类得分", panelX + panelWidth / 2, panelY + panelHeight / 2);
     ctx.textAlign = "left";
   } else if (options.chartType === "heatmap") {
     renderHeatmap({
@@ -1064,7 +1064,7 @@ export async function renderShareResultsCanvas(
   const footerParts = [
     options.footerNote.trim() || null,
     options.showDate ? data.runDateLabel : null,
-    options.showRunDetails ? `${data.runsPerTest}x run${data.runsPerTest === 1 ? "" : "s"}` : null
+    options.showRunDetails ? `${data.runsPerTest} 次运行` : null
   ].filter((part): part is string => Boolean(part));
   const footerY = format.height - margin - footerHeight / 2;
   if (footerParts.length > 0) {
@@ -1093,7 +1093,7 @@ export function shareResultsCanvasToBlob(canvas: HTMLCanvasElement): Promise<Blo
       if (blob) {
         resolve(blob);
       } else {
-        reject(new Error("Could not render the share-results image."));
+        reject(new Error("无法渲染分享结果图片。"));
       }
     }, "image/png");
   });

@@ -176,7 +176,7 @@ export function registerIpcHandlers(): void {
       const workspace = input.state.workspaces[input.workspaceId];
 
       if (!workspace) {
-        throw new Error(`Workspace "${input.workspaceId}" was not found.`);
+        throw new Error(`未找到工作区 "${input.workspaceId}"。`);
       }
 
       const tabs = Object.fromEntries(
@@ -187,9 +187,9 @@ export function registerIpcHandlers(): void {
       );
 
       const result = await dialog.showSaveDialog({
-        title: "Export Workspace",
+        title: "导出工作区",
         defaultPath: `${workspace.name.replace(/[^\w.-]+/g, "-").toLowerCase() || "workspace"}.benchlocal-workspace.json`,
-        filters: [{ name: "BenchLocal Workspace", extensions: ["json"] }]
+        filters: [{ name: "BenchLocal 工作区", extensions: ["json"] }]
       });
 
       if (result.canceled || !result.filePath) {
@@ -217,9 +217,9 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(WORKSPACES_IMPORT_CHANNEL, async () => {
     const result = await dialog.showOpenDialog({
-      title: "Import Workspace",
+      title: "导入工作区",
       properties: ["openFile"],
-      filters: [{ name: "BenchLocal Workspace", extensions: ["json"] }]
+      filters: [{ name: "BenchLocal 工作区", extensions: ["json"] }]
     });
 
     if (result.canceled || result.filePaths.length === 0) {
@@ -233,7 +233,7 @@ export function registerIpcHandlers(): void {
     };
 
     if (!parsed.workspace || !parsed.tabs) {
-      throw new Error("Imported workspace file is missing workspace or tab data.");
+      throw new Error("导入的工作区文件缺少工作区或标签页数据。");
     }
 
     return {

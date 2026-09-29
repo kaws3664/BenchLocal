@@ -5,28 +5,28 @@
 <h1 align="center">BenchLocal</h1>
 
 <p align="center">
-  Test LLMs on real tasks. Compare models side-by-side.
+  在真实任务上测试大语言模型，直观对比不同模型的表现。
 </p>
 
 <p align="center">
-  <a href="https://benchlocal.com">Website</a>
+  <a href="https://benchlocal.com">官网</a>
   ·
-  <a href="https://github.com/stevibe/BenchLocal/releases/latest">Download</a>
+  <a href="https://github.com/stevibe/BenchLocal/releases/latest">下载</a>
   ·
-  <a href="./docs/assets/benchlocal-demo.mp4">Watch demo</a>
+  <a href="./docs/assets/benchlocal-demo.mp4">观看演示</a>
   ·
-  <a href="./BENCH_PACK_AUTHORING.md">Build a Bench Pack</a>
+  <a href="./BENCH_PACK_AUTHORING.md">制作 Bench Pack</a>
 </p>
 
 <p align="center">
   <a href="./docs/assets/benchlocal-demo.mp4">
-    <img src="./screenshot.png" alt="BenchLocal desktop app preview" />
+    <img src="./screenshot.png" alt="BenchLocal 桌面应用预览" />
   </a>
 </p>
 
-BenchLocal is a local-first desktop app for running, comparing, and managing installable LLM Bench Packs against local or remote models.
+BenchLocal 是一款本地优先的桌面应用，用于针对本地或远程模型运行、对比和管理可安装的 LLM 基准包（Bench Pack）。
 
-Official Bench Packs today:
+目前官方提供的 Bench Pack：
 
 - [ToolCall-15](https://github.com/stevibe/ToolCall-15)
 - [BugFind-15](https://github.com/stevibe/BugFind-15)
@@ -38,59 +38,59 @@ Official Bench Packs today:
 - [CLI-40](https://github.com/stevibe/CLI-40)
 - [HermesAgent-20](https://github.com/stevibe/HermesAgent-20)
 
-BenchLocal owns the shared desktop runtime:
+BenchLocal 负责共享的桌面运行时：
 
-- provider configuration
-- model registry
-- Bench Pack install and update flow
-- per-tab sampling overrides
-- run execution and result history
-- verifier lifecycle management
-- persisted desktop UI state
+- 提供商（Provider）配置
+- 模型注册表
+- Bench Pack 安装与更新流程
+- 每个标签页的采样参数覆盖
+- 运行执行与结果历史
+- 验证器（Verifier）生命周期管理
+- 持久化的桌面 UI 状态
 
-## Agent access
+## 智能体访问（Agent Access）
 
-BenchLocal can expose a local agent surface so AI agents and automation tools can control benchmark workflows while the desktop UI stays live.
+BenchLocal 可以暴露本地智能体接口，让 AI 智能体和自动化工具在桌面 UI 保持在线的同时控制基准测试工作流。
 
-Enable it from **Settings > Agent Access**. The app will show:
+在 **设置 > Agent 访问** 中启用。应用会显示：
 
-- a bearer token
-- the local Agent Guide URL
-- the OpenAPI URL
-- the MCP Streamable HTTP URL
+- 一个 Bearer 令牌
+- 本地 Agent 指南 URL
+- OpenAPI URL
+- MCP Streamable HTTP URL
 
-The HTTP API uses JSON commands for actions such as listing Bench Packs, managing providers and models, creating tabs, selecting models, refreshing availability, starting runs, resuming runs, retrying results, and stopping active runs. Live progress is available through Server-Sent Events at `/v1/events`.
+HTTP API 使用 JSON 命令执行诸如列出 Bench Pack、管理提供商和模型、创建标签页、选择模型、刷新可用性、启动运行、继续运行、重试结果以及停止活动运行等操作。实时进度可通过 `/v1/events` 的 Server-Sent Events 获取。
 
-MCP-capable agents can connect to `/mcp` with the same bearer token and use standard `benchlocal_*` tools plus BenchLocal state resources. This is the preferred integration path for agents that support tool calls.
+支持 MCP 的智能体可以使用相同的 Bearer 令牌连接到 `/mcp`，使用标准的 `benchlocal_*` 工具以及 BenchLocal 状态资源。对于支持工具调用的智能体，这是首选的集成方式。
 
-See [docs/agent-control-api.md](./docs/agent-control-api.md) for endpoint details, MCP tools/resources, safety rules, and the extension checklist for adding future UI features to the agent surface.
+有关端点详情、MCP 工具/资源、安全规则，以及为智能体接口扩展未来 UI 功能的检查清单，请参阅 [docs/agent-control-api.md](./docs/agent-control-api.md)。
 
-Each Bench Pack owns its benchmark behavior:
+每个 Bench Pack 负责自身的基准测试行为：
 
-- scenario definitions
-- benchmark-specific prompts
-- scoring logic
-- verifier contracts where required
-- benchmark-specific traces and summaries
+- 场景定义
+- 基准测试专用的提示词
+- 评分逻辑
+- 需要时的验证器契约
+- 基准测试专用的轨迹与摘要
 
-## Repo layout
+## 仓库结构
 
 - `app/`
-  Electron app shell, desktop UI, main process, preload, renderer
+  Electron 应用外壳、桌面 UI、主进程、预加载脚本、渲染进程
 - `packages/benchlocal-core`
-  shared protocol, config, workspace, and theme types
+  共享的协议、配置、工作区与主题类型
 - `packages/benchlocal-sdk`
-  authoring helpers for Bench Pack repos
+  用于 Bench Pack 仓库的创作辅助工具
 - `packages/benchpack-host`
-  host-side install, inspection, verifier, and run orchestration logic
+  宿主侧的安装、检查、验证器与运行编排逻辑
 - `themes/`
-  built-in desktop themes
+  内置桌面主题
 - `scripts/`
-  local macOS release helpers
+  本地 macOS 发布辅助脚本
 - `docs/`
-  packaging and release docs
+  打包与发布文档
 
-## Developer references
+## 开发者参考
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md)
 - [BENCH_PACK_AUTHORING.md](./BENCH_PACK_AUTHORING.md)
@@ -102,21 +102,21 @@ Each Bench Pack owns its benchmark behavior:
 - [docs/windows-release.md](./docs/windows-release.md)
 - [docs/linux-release.md](./docs/linux-release.md)
 
-## Build commands
+## 构建命令
 
 - `npm run build`
-  compile the app and workspace packages for development
+  为开发编译应用与工作区包
 - `npm run pack`
-  compile and package the production desktop app, including DMG and ZIP artifacts
+  编译并打包生产桌面应用（含 DMG 与 ZIP 产物）
 - `npm run build:dir`
-  compile and produce an unpacked local app bundle
+  编译并生成未打包的本地应用目录
 - `npm run build:win`
-  compile and package unsigned Windows NSIS and ZIP artifacts
+  编译并打包未签名的 Windows NSIS 与 ZIP 产物
 - `npm run build:linux`
-  compile and package Linux AppImage and tar.gz artifacts
+  编译并打包 Linux AppImage 与 tar.gz 产物
 - `npm run release:all`
-  build the signed macOS release plus Windows and Linux desktop artifacts in one command
+  一条命令构建已签名的 macOS 发布版以及 Windows、Linux 桌面产物
 
-## License
+## 许可证
 
 MIT

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "sunforge",
-  "name": "Sunforge",
+  "name": "熔日",
   "colorScheme": "light",
   "variables": {
     "--theme-color-scheme": "light",

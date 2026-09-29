@@ -10,10 +10,10 @@ let latestDetachedLogsState: DetachedLogsState | null = null;
 
 function buildDetachedLogsWindowTitle(state: DetachedLogsState | null): string {
   if (!state) {
-    return "Run Logs";
+    return "运行日志";
   }
 
-  return `Run Logs - ${state.workspaceName} - ${state.tabTitle}`;
+  return `运行日志 - ${state.workspaceName} - ${state.tabTitle}`;
 }
 
 function broadcastWindowClosed(): void {

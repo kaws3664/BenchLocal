@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "light",
-  "name": "Light",
+  "name": "浅色",
   "colorScheme": "light",
   "variables": {
     "--theme-color-scheme": "light",
