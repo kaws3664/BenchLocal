@@ -1,45 +1,45 @@
-# Windows Release
+# Windows 发布
 
-BenchLocal does not yet have a production-ready Windows release pipeline.
+BenchLocal 目前还没有生产就绪的 Windows 发布流水线。
 
-Current target:
+当前目标：
 
-- `nsis` installer
-- `zip` portable artifact
-- `x64` only
+- `nsis` 安装程序
+- `zip` 便携产物
+- 仅 `x64`
 
-Build command:
+构建命令：
 
 ```bash
 cd BenchLocal
 npm run build:win
 ```
 
-Or build all release artifacts from the repo root:
+或在仓库根目录构建全部发布产物：
 
 ```bash
 npm run release:all
 ```
 
-Expected outputs:
+预期产物：
 
 - `app/dist/BenchLocal-<version>-windows-x64.exe`
 - `app/dist/BenchLocal-<version>-windows-x64.zip`
 
-Current gaps:
+当前缺口：
 
-- no Windows `.ico` asset is configured yet
-- no Windows code-signing flow is configured yet
-- Bench Pack archive extraction still relies on `tar` being available on the target machine
+- 尚未配置 Windows `.ico` 图标资源
+- 尚未配置 Windows 代码签名流程
+- Bench Pack 归档解压仍依赖目标机器上可用的 `tar`
 
-Signing guidance:
+签名建议：
 
-- a Microsoft Store developer account is not required for direct downloads
-- a Windows code-signing certificate is recommended for public distribution
-- EV signing provides better SmartScreen trust than a standard code-signing certificate
+- 直接下载分发不需要 Microsoft Store 开发者账号
+- 公开分发建议使用 Windows 代码签名证书
+- 相比标准代码签名证书，EV 签名能获得更好的 SmartScreen 信任度
 
-Practical rollout:
+实际推进步骤：
 
-1. produce an unsigned Windows build
-2. validate install, launch, Bench Pack install/uninstall, and Docker-backed verifier flows on a real Windows machine
-3. add signing after the runtime behavior is proven stable
+1. 先产出未签名的 Windows 构建
+2. 在真实的 Windows 机器上验证安装、启动、Bench Pack 安装/卸载，以及基于 Docker 的验证器流程
+3. 运行时行为稳定后再加入签名

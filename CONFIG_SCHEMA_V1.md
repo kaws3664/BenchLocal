@@ -1,35 +1,36 @@
-# BenchLocal Config Schema v1
+# BenchLocal 配置 Schema v1
 
-## Purpose
+## 目的
 
-This document describes the durable user configuration stored in:
+本文档描述存储在以下位置的持久用户配置：
 
 ```text
 ~/.benchlocal/config.toml
 ```
 
-BenchLocal edits this file through the desktop UI. Advanced users can edit it manually.
+BenchLocal 通过桌面 UI 编辑此文件。高级用户也可以手动编辑。
 
-## Durable config vs UI state
+## 持久配置与 UI 状态
 
-BenchLocal keeps two different local files:
+BenchLocal 维护两个不同的本地文件：
 
 - `config.toml`
-  - durable configuration
-  - providers
-  - models
-  - installed Bench Pack state
-  - verifier preferences
-  - theme selection
+  - 持久配置
+  - 提供商
+  - 模型
+  - 已安装 Bench Pack 的状态
+  - 验证器偏好
+  - 主题选择
+  - 界面语言
 - `state.json`
-  - workspaces and tabs
-  - selected models per tab
-  - sampling overrides per tab
-  - execution mode per tab
+  - 工作区与标签页
+  - 每个标签页所选的模型
+  - 每个标签页的采样参数覆盖
+  - 每个标签页的执行模式
 
-This document is only about `config.toml`.
+本文档只涉及 `config.toml`。
 
-## Storage layout
+## 存储布局
 
 ```text
 ~/.benchlocal/
@@ -42,7 +43,7 @@ This document is only about `config.toml`.
   themes/
 ```
 
-## Current top-level schema
+## 当前顶层 Schema
 
 ```toml
 schema_version = 1
@@ -57,23 +58,24 @@ official_url = "https://raw.githubusercontent.com/stevibe/benchlocal-registry/ma
 
 [ui]
 theme = "system"
+language = "zh-CN"
 
 [agent]
 enabled = false
 access = "localhost"
 ```
 
-Fresh config starts intentionally blank:
+全新配置有意从空白开始：
 
-- no providers
-- no models
-- no installed Bench Packs
+- 没有提供商
+- 没有模型
+- 没有已安装的 Bench Pack
 
-BenchLocal does not seed providers or models automatically.
+BenchLocal 不会自动填充提供商或模型。
 
-## Agent Access
+## Agent 访问
 
-Agent Access lives under:
+Agent 访问位于：
 
 ```toml
 [agent]
@@ -82,23 +84,23 @@ access = "localhost"
 port = 41373
 ```
 
-Fields:
+字段：
 
-- `enabled` starts or stops the local agent control API
-- `access` controls the bind scope: `localhost` binds to `127.0.0.1`; `local_network` binds to `0.0.0.0`
-- `port` is optional; omit it to let BenchLocal choose an available local port
+- `enabled` 启动或停止本地 Agent 控制 API
+- `access` 控制绑定范围：`localhost` 绑定到 `127.0.0.1`；`local_network` 绑定到 `0.0.0.0`
+- `port` 可选；省略则由 BenchLocal 选择一个可用的本地端口
 
-Agent Access uses a generated bearer token stored separately in `~/.benchlocal/agent-session.json`. Keep `access = "localhost"` unless agents on other devices need to connect over your local network.
+Agent 访问使用生成的 Bearer 令牌，单独存储在 `~/.benchlocal/agent-session.json`。除非其他设备上的 Agent 需要通过局域网连接，否则请保持 `access = "localhost"`。
 
-## Providers
+## 提供商
 
-Providers live under:
+提供商位于：
 
 ```toml
 [providers.<provider-id>]
 ```
 
-Example:
+示例：
 
 ```toml
 [providers.openrouter]
@@ -109,7 +111,7 @@ base_url = "https://openrouter.ai/api/v1"
 api_key_env = "OPENROUTER_API_KEY"
 ```
 
-Supported provider kinds:
+支持的提供商类型：
 
 - `openrouter`
 - `ollama`
@@ -119,18 +121,18 @@ Supported provider kinds:
 - `pico`
 - `openai_compatible`
 
-Provider fields:
+提供商字段：
 
 - `kind`
 - `name`
 - `enabled`
 - `base_url`
-- `api_key` optional
-- `api_key_env` optional
+- `api_key` 可选
+- `api_key_env` 可选
 
-## Models
+## 模型
 
-Models are stored as an array:
+模型以数组形式存储：
 
 ```toml
 [[models]]
@@ -142,7 +144,7 @@ group = "primary"
 enabled = true
 ```
 
-Model fields:
+模型字段：
 
 - `id`
 - `provider`
@@ -151,17 +153,17 @@ Model fields:
 - `group`
 - `enabled`
 
-`id` must remain stable because tabs and run history refer to it.
+`id` 必须保持稳定，因为标签页和运行历史会引用它。
 
-## Installed Bench Packs
+## 已安装的 Bench Pack
 
-Bench Pack install state lives under:
+Bench Pack 安装状态位于：
 
 ```toml
 [benchpacks.<benchpack-id>]
 ```
 
-Example official install:
+官方安装示例：
 
 ```toml
 [benchpacks.toolcall-15]
@@ -170,7 +172,7 @@ source = "registry"
 version = "1.0.0"
 ```
 
-Example third-party install:
+第三方安装示例：
 
 ```toml
 [benchpacks.third-party-pack]
@@ -180,7 +182,7 @@ url = "https://example.com/benchpack.tar.gz"
 version = "1.0.0"
 ```
 
-Supported stored sources:
+支持的存储来源：
 
 - `registry`
 - `archive`
@@ -188,27 +190,27 @@ Supported stored sources:
 - `local`
 - `git`
 
-In normal product use, the important ones are:
+在正常产品使用中，重要的是：
 
 - `registry`
 - `archive`
 
-The others remain for compatibility and local development workflows.
+其余的为兼容性和本地开发工作流保留。
 
-Bench Pack fields:
+Bench Pack 字段：
 
 - `enabled`
 - `source`
-- `version` optional
-- `repo` optional
-- `path` optional
-- `url` optional
-- `ref` optional
-- `auto_update` optional
+- `version` 可选
+- `repo` 可选
+- `path` 可选
+- `url` 可选
+- `ref` 可选
+- `auto_update` 可选
 
-## Verifier preferences
+## 验证器偏好
 
-Verifier preferences live inside each installed Bench Pack block:
+验证器偏好位于每个已安装 Bench Pack 块内部：
 
 ```toml
 [benchpacks.structoutput-15.verifiers.verifier]
@@ -216,44 +218,52 @@ mode = "docker"
 auto_start = true
 ```
 
-Verifier fields:
+验证器字段：
 
 - `mode`
   - `docker`
   - `cloud`
   - `custom_url`
 - `auto_start`
-- `custom_url` optional
-- `cloud_url` optional
-- `docker_image` optional
+- `custom_url` 可选
+- `cloud_url` 可选
+- `docker_image` 可选
 
-BenchLocal manages Docker host ports automatically. Users do not configure them in `config.toml`.
+BenchLocal 自动管理 Docker 宿主端口。用户无需在 `config.toml` 中配置它们。
 
-## UI settings
+## UI 设置
 
-Current UI settings are intentionally small:
+当前的 UI 设置有意保持精简：
 
 ```toml
 [ui]
 theme = "system"
+language = "zh-CN"
 ```
 
-Supported built-in values:
+`theme` 支持的内置值：
 
 - `system`
 - `light`
 - `dark`
 - `night`
 
-Custom themes can be added under:
+自定义主题可添加到：
 
 ```text
 ~/.benchlocal/themes/
 ```
 
-## Compatibility aliases
+`language` 控制界面语言：
 
-BenchLocal still reads a few legacy keys during migration:
+- `zh-CN` 简体中文（默认）
+- `en-US` English
+
+也可以在应用内的主题菜单中切换界面语言；切换会写回此字段。
+
+## 兼容性别名
+
+BenchLocal 在迁移期间仍会读取少量旧版键名：
 
 - `default_bench_pack`
 - `default_plugin`
@@ -262,4 +272,4 @@ BenchLocal still reads a few legacy keys during migration:
 - `bench_packs`
 - `plugins`
 
-Those aliases are backward-compatibility only. New config should use the `benchpack` forms documented above.
+这些别名仅用于向后兼容。新配置应使用上文所述的 `benchpack` 形式。

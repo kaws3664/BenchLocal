@@ -1,43 +1,43 @@
 # @benchlocal/core
 
-Core types and shared runtime contracts for BenchLocal and Bench Packs.
+BenchLocal 与 Bench Pack 的核心类型和共享运行时契约。
 
-This package is the low-level foundation for the BenchLocal ecosystem. It defines the data structures that the BenchLocal desktop app, Bench Pack host runtime, and Bench Pack SDK all agree on.
+本包是 BenchLocal 生态的底层基础，定义了 BenchLocal 桌面应用、Bench Pack 宿主运行时和 Bench Pack SDK 共同遵循的数据结构。
 
-Use `@benchlocal/core` when you need the protocol and storage shapes directly. If you are authoring a Bench Pack, you will usually import from `@benchlocal/sdk` instead.
+当你需要直接使用协议和存储结构时，请使用 `@benchlocal/core`。如果你正在编写 Bench Pack，通常应改为从 `@benchlocal/sdk` 导入。
 
-## Install
+## 安装
 
 ```bash
 npm install @benchlocal/core
 ```
 
-## What this package contains
+## 本包包含的内容
 
-- Bench Pack manifest and runtime protocol types
-- provider, model, secret, and verifier types
-- workspace state types
-- config loading and normalization helpers
-- theme types
+- Bench Pack 清单与运行时协议类型
+- 提供商、模型、密钥与验证器类型
+- 工作区状态类型
+- 配置加载与规范化辅助函数
+- 主题类型
 
-The public entrypoint exports:
+公共入口导出：
 
 - `config`
 - `protocol`
 - `theme`
 - `workspaces`
 
-## Intended users
+## 目标用户
 
-- BenchLocal app and host code
-- Bench Pack tooling
-- ecosystem tooling that needs to read or validate BenchLocal config or workspace state
+- BenchLocal 应用与宿主代码
+- Bench Pack 工具链
+- 需要读取或校验 BenchLocal 配置、工作区状态的生态工具
 
-## Stability
+## 稳定性
 
-`@benchlocal/core` is part of the public BenchLocal ecosystem surface, but it is lower-level than `@benchlocal/sdk`. Bench Pack authors should prefer the SDK unless they specifically need direct access to the core protocol or config types.
+`@benchlocal/core` 属于 BenchLocal 生态公共接口的一部分，但层级低于 `@benchlocal/sdk`。除非确实需要直接访问核心协议或配置类型，Bench Pack 作者应优先使用 SDK。
 
-## Repository
+## 仓库
 
-- BenchLocal monorepo: https://github.com/stevibe/BenchLocal
-- Issues: https://github.com/stevibe/BenchLocal/issues
+- BenchLocal 单仓库：https://github.com/stevibe/BenchLocal
+- 问题反馈：https://github.com/stevibe/BenchLocal/issues

@@ -1,32 +1,32 @@
-# Releasing BenchLocal
+# 发布 BenchLocal
 
-This document captures the current release flow for a new BenchLocal desktop release.
+本文档记录当前发布新版 BenchLocal 桌面版的流程。
 
-## Versioning
+## 版本号
 
-- BenchLocal desktop releases use the workspace/app version, for example `0.2.1`.
-- For a desktop client-only release, update:
+- BenchLocal 桌面版使用工作区/应用的版本号，例如 `0.2.1`。
+- 仅发布桌面客户端时，需要更新：
   - `package.json`
   - `app/package.json`
   - `package-lock.json`
-- `@benchlocal/core` and `@benchlocal/sdk` should only be bumped when those npm packages are actually being released.
-- Internal workspace packages do not need to be version-bumped for every desktop release.
+- 只有在实际发布这些 npm 包时，才应升级 `@benchlocal/core` 和 `@benchlocal/sdk` 的版本。
+- 内部工作区包不需要为每次桌面发布升级版本号。
 
-## Release Flow
+## 发布流程
 
-1. Bump the desktop client version without creating a tag yet:
+1. 升级桌面客户端版本号，暂不创建标签：
 
 ```bash
 npm version <version> --workspace app --include-workspace-root --no-git-tag-version
 ```
 
-Example:
+示例：
 
 ```bash
 npm version 0.2.2 --workspace app --include-workspace-root --no-git-tag-version
 ```
 
-2. Review the working tree and commit the release prep:
+2. 检查工作树并提交发布准备：
 
 ```bash
 git status --short
@@ -34,7 +34,7 @@ git add package.json app/package.json package-lock.json
 git commit -m "Release BenchLocal v<version>"
 ```
 
-3. Build release artifacts from that exact release commit:
+3. 从该发布提交构建发布产物：
 
 ```bash
 npm run release:mac
@@ -42,12 +42,12 @@ npm run build:win
 npm run build:linux
 ```
 
-Notes:
-- macOS should use `release:mac`, not `build:mac`
-- Windows and Linux use `build:win` and `build:linux`
-- `npm run release:all` runs the same three builds in order
+注意：
+- macOS 应使用 `release:mac`，而不是 `build:mac`
+- Windows 和 Linux 使用 `build:win` 和 `build:linux`
+- `npm run release:all` 会按顺序执行这三个构建
 
-4. Confirm release artifacts in `app/dist`:
+4. 在 `app/dist` 中确认发布产物：
 
 - `BenchLocal-<version>-apple-silicon.dmg`
 - `BenchLocal-<version>-apple-silicon.dmg.blockmap`
@@ -62,13 +62,13 @@ Notes:
 - `latest-mac.yml`
 - `latest-linux.yml`
 
-Notes:
-- these `latest*.yml` files power the in-app self-update flow
-- every desktop release must publish the matching metadata files alongside the platform artifacts
-- the blockmap files are used by `electron-updater` for differential downloads and should be uploaded with the artifacts that generated them
-- the GitHub tag must be `v<version>` because the updater is configured with `tagNamePrefix: v`
+注意：
+- 这些 `latest*.yml` 文件支撑应用内自更新流程
+- 每次桌面发布都必须随平台产物一起发布对应的元数据文件
+- blockmap 文件供 `electron-updater` 用于差分下载，应与生成它们的产物一起上传
+- GitHub 标签必须是 `v<version>`，因为更新器配置的 `tagNamePrefix` 是 `v`
 
-5. Push the release commit and create the release tag:
+5. 推送发布提交并创建发布标签：
 
 ```bash
 git push origin main
@@ -76,22 +76,22 @@ git tag v<version>
 git push origin v<version>
 ```
 
-6. Create the GitHub release for `v<version>` and upload the artifacts from `app/dist`.
+6. 为 `v<version>` 创建 GitHub Release，并上传 `app/dist` 中的产物。
 
-Notes:
-- publish the GitHub release after all assets are uploaded; draft releases are not visible to the updater feed
-- upload the `latest*.yml` metadata files and `.blockmap` files along with the installers and archives
-- if a release is published without `latest-mac.yml`, `latest.yml`, or `latest-linux.yml`, installed apps can show 404 errors when users click "Check for Updates"
+注意：
+- 在所有资源上传完毕后再发布 GitHub Release；草稿发布对更新源不可见
+- 将 `latest*.yml` 元数据文件和 `.blockmap` 文件与安装包、归档一起上传
+- 如果发布时缺少 `latest-mac.yml`、`latest.yml` 或 `latest-linux.yml`，已安装的应用在用户点击「检查更新」时可能出现 404 错误
 
-## Self-Update Requirements
+## 自更新要求
 
-BenchLocal uses `electron-updater` with the GitHub Releases provider. Production update checks look for the latest published GitHub release and download the matching updater metadata:
+BenchLocal 使用 `electron-updater` 的 GitHub Releases 提供方。生产环境的更新检查会查找最新的已发布 GitHub Release 并下载对应的更新元数据：
 
-- macOS: `latest-mac.yml`
-- Windows: `latest.yml`
-- Linux: `latest-linux.yml`
+- macOS：`latest-mac.yml`
+- Windows：`latest.yml`
+- Linux：`latest-linux.yml`
 
-Before announcing a release, verify these URLs return HTTP 200:
+宣布发布前，请验证这些 URL 返回 HTTP 200：
 
 ```bash
 curl -fsSL https://github.com/stevibe/BenchLocal/releases/download/v<version>/latest-mac.yml
@@ -99,77 +99,77 @@ curl -fsSL https://github.com/stevibe/BenchLocal/releases/download/v<version>/la
 curl -fsSL https://github.com/stevibe/BenchLocal/releases/download/v<version>/latest-linux.yml
 ```
 
-Then inspect each metadata file and confirm:
+然后检查每个元数据文件并确认：
 
-- `version:` matches `<version>`
-- every referenced `url:` file exists in the same GitHub release assets
-- macOS metadata references the `.zip` artifact because that is what Squirrel.Mac applies during update installation
+- `version:` 与 `<version>` 一致
+- 每个被引用的 `url:` 文件都存在于同一 GitHub Release 资源中
+- macOS 元数据引用的是 `.zip` 产物，因为 Squirrel.Mac 在更新安装时使用它
 
-`v0.2.2` is the first release that includes the self-update client. Users on `v0.2.1` still need to install `v0.2.2` manually. After users are on `v0.2.2` or later, future releases can be installed through the in-app updater.
+`v0.2.2` 是第一个包含自更新客户端的版本。`v0.2.1` 的用户仍需手动安装 `v0.2.2`。用户升级到 `v0.2.2` 或更高版本后，后续版本即可通过应用内更新器安装。
 
-## macOS Release Checks
+## macOS 发布检查
 
-Before using `release:mac`, make sure the local macOS release environment is ready:
+使用 `release:mac` 之前，请确保本地 macOS 发布环境已就绪：
 
 ```bash
 npm run release:doctor:mac
 ```
 
-If setup is needed:
+如需配置：
 
 ```bash
 npm run release:setup:mac
 ```
 
-## Local Self-Update Testing
+## 本地自更新测试
 
-You can test the updater end to end without creating a GitHub release by pointing an installed BenchLocal build at a local HTTP feed.
+无需创建 GitHub Release，通过让已安装的 BenchLocal 构建指向本地 HTTP 更新源，即可端到端测试更新器。
 
-1. Install an older packaged build, for example `0.2.2`.
-2. Build a newer release, for example `0.2.3`, so `app/dist` contains:
-   - the platform artifacts
+1. 安装一个较旧的打包构建，例如 `0.2.2`。
+2. 构建一个较新的发布版，例如 `0.2.3`，使 `app/dist` 包含：
+   - 平台产物
    - `latest.yml`
    - `latest-mac.yml`
    - `latest-linux.yml`
-3. Serve `app/dist` over HTTP, for example:
+3. 通过 HTTP 提供 `app/dist`，例如：
 
 ```bash
 cd app/dist
 python3 -m http.server 9000
 ```
 
-4. Launch the installed older app with `BENCHLOCAL_UPDATE_URL` pointed at that server:
+4. 启动已安装的旧版应用，并将 `BENCHLOCAL_UPDATE_URL` 指向该服务器：
 
 ```bash
 BENCHLOCAL_UPDATE_URL=http://127.0.0.1:9000/ /Applications/BenchLocal.app/Contents/MacOS/BenchLocal
 ```
 
-Notes:
-- the updater override is intended for packaged app testing; dev mode still disables self-update
-- `BENCHLOCAL_UPDATE_CHANNEL` is optional if you need to override the update channel name
-- the About dialog shows the active update feed so you can confirm the app is using the local test server
-- after "Restart to Update", relaunch with `BENCHLOCAL_UPDATE_URL` again if you want another local-feed check; the environment override may not be preserved by the updater relaunch
+注意：
+- 更新器覆盖变量用于打包应用的测试；开发模式仍会禁用自更新
+- 如需覆盖更新渠道名称，可使用可选的 `BENCHLOCAL_UPDATE_CHANNEL`
+- 「关于」对话框会显示当前生效的更新源，可借此确认应用正在使用本地测试服务器
+- 「重启以更新」之后，如需再次检查本地更新源，请重新带上 `BENCHLOCAL_UPDATE_URL` 启动；更新器的重启可能不会保留环境覆盖变量
 
-## Release Note Inputs
+## 发布说明素材
 
-Before publishing, collect:
+发布前收集：
 
-- commit log since the previous release tag
-- user-facing changes since the previous release
-- new official Bench Pack support or platform/runtime changes
-- installer/runtime fixes that affect production usage
+- 自上一个发布标签以来的提交日志
+- 自上一个发布以来面向用户的变化
+- 新增的官方 Bench Pack 支持或平台/运行时变化
+- 影响生产使用的安装包/运行时修复
 
-Useful command:
+有用的命令：
 
 ```bash
 git log --oneline <previous-tag>..HEAD
 ```
 
-## Post-Release Checklist
+## 发布后检查清单
 
-- verify the tag points to the intended release commit
-- verify the GitHub release assets match the current version number
-- verify the `latest*.yml` GitHub URLs return HTTP 200
-- verify an installed update-capable build can detect the new release from GitHub Releases
-- verify the app launches and reports the new version correctly
-- if the release bundles updated runtime packages, verify Bench Pack installation and execution still work on the built app
+- 验证标签指向预期的发布提交
+- 验证 GitHub Release 资源与当前版本号一致
+- 验证 `latest*.yml` 的 GitHub URL 返回 HTTP 200
+- 验证具备更新能力的已安装构建能从 GitHub Releases 检测到新版本
+- 验证应用能启动并正确报告新版本号
+- 如果发布捆绑了更新的运行时包，验证 Bench Pack 的安装与执行在构建出的应用上仍可工作

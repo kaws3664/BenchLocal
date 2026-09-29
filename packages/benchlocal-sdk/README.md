@@ -1,23 +1,23 @@
 # @benchlocal/sdk
 
-SDK for authoring Bench Packs that run inside BenchLocal.
+用于编写在 BenchLocal 中运行的 Bench Pack 的 SDK。
 
-This package sits on top of `@benchlocal/core` and provides the thin authoring layer used by official Bench Packs:
+本包位于 `@benchlocal/core` 之上，提供官方 Bench Pack 使用的轻量编写层：
 
-- typed manifest loading
-- Bench Pack runtime definition helpers
-- host-context lookup helpers
-- result helpers for scoring
+- 带类型的清单加载
+- Bench Pack 运行时定义辅助函数
+- 宿主上下文查询辅助函数
+- 用于评分的结果辅助函数
 
-## Install
+## 安装
 
 ```bash
 npm install @benchlocal/sdk
 ```
 
-## Typical usage
+## 典型用法
 
-Keep your benchmark logic in your own repo code, and use the SDK only inside `benchlocal/index.ts`.
+把基准测试逻辑放在你自己的仓库代码中，只在 `benchlocal/index.ts` 里使用 SDK。
 
 ```ts
 import {
@@ -64,7 +64,7 @@ export default defineBenchPack({
 });
 ```
 
-## Main helpers
+## 主要辅助函数
 
 - `loadBenchPackManifest(__dirname)`
 - `defineBenchPack(...)`
@@ -72,24 +72,24 @@ export default defineBenchPack({
 - `createHostHelpers(context)`
 - `requireScoredResults(results)`
 
-Useful host lookups:
+常用的宿主查询：
 
 - `getRequiredProvider(providerId, { enabledOnly: true })`
 - `getRequiredInferenceEndpoint(modelId)`
 - `getRequiredVerifier(verifierId)`
 
-When a pack uses a Docker verifier, the returned inference endpoint may also include `dockerBaseUrl`. Forward `dockerBaseUrl ?? baseUrl` to the verifier-side runtime.
+当 Bench Pack 使用 Docker 验证器时，返回的推理端点还可能包含 `dockerBaseUrl`。请将 `dockerBaseUrl ?? baseUrl` 转发给验证器侧的运行时。
 
-`@benchlocal/sdk` also re-exports the main public types from `@benchlocal/core`.
+`@benchlocal/sdk` 还会重新导出 `@benchlocal/core` 的主要公共类型。
 
-## Authoring model
+## 编写模式
 
-- keep canonical Bench Pack metadata in `benchlocal.pack.json`
-- load and export that metadata from `benchlocal/index.ts`
-- keep benchmark logic in your own repo modules such as `lib/`
-- use the SDK only for the BenchLocal adapter layer
+- 将规范的 Bench Pack 元数据保存在 `benchlocal.pack.json`
+- 从 `benchlocal/index.ts` 加载并导出该元数据
+- 将基准测试逻辑保存在你自己的仓库模块中（例如 `lib/`）
+- SDK 只用于 BenchLocal 适配层
 
-## Repository
+## 仓库
 
-- BenchLocal monorepo: https://github.com/stevibe/BenchLocal
-- Issues: https://github.com/stevibe/BenchLocal/issues
+- BenchLocal 单仓库：https://github.com/stevibe/BenchLocal
+- 问题反馈：https://github.com/stevibe/BenchLocal/issues

@@ -1,56 +1,56 @@
-# macOS Release Workflow
+# macOS 发布工作流
 
-BenchLocal ships a standard macOS desktop release as:
+BenchLocal 以如下形式发布标准 macOS 桌面版：
 
 - `BenchLocal-<version>-apple-silicon.dmg`
 - `BenchLocal-<version>-apple-silicon.zip`
 
-This repo uses a local signing workflow. Apple credentials stay on the release machine and are not committed to the repo.
+本仓库使用本地签名工作流。Apple 凭据保存在发布机器上，不会提交到仓库。
 
-## Requirements
+## 前提条件
 
 - macOS
-- Xcode command line tools
-- Apple Developer membership
-- a `Developer ID Application` certificate installed in the login keychain
+- Xcode 命令行工具
+- Apple Developer 会员资格
+- 登录钥匙串中已安装 `Developer ID Application` 证书
 
-For public internet distribution, you also want notarization configured.
+面向公网分发时，还需要配置公证（notarization）。
 
-## Command reference
+## 命令参考
 
-From the repo root:
+在仓库根目录：
 
 ```bash
 npm run build
 ```
 
-Compile only. This is the normal development build.
+仅编译。这是常规的开发构建。
 
 ```bash
 npm run pack
 ```
 
-Compile and package the production app, including DMG and ZIP artifacts.
+编译并打包生产应用，包含 DMG 和 ZIP 产物。
 
 ```bash
 npm run build:dir
 ```
 
-Compile and produce an unpacked local `.app` bundle.
+编译并产出未打包的本地 `.app` 包。
 
 ```bash
 npm run build:mac
 ```
 
-Compile and package the macOS DMG and ZIP explicitly through the app workspace.
+通过 app 工作区显式编译并打包 macOS DMG 和 ZIP。
 
 ```bash
 npm run release:all
 ```
 
-Build the signed macOS release, then package Windows and Linux artifacts from the repo root.
+先构建已签名的 macOS 发布版，再从仓库根目录打包 Windows 和 Linux 产物。
 
-For a real signed release, use:
+要进行真正的签名发布，请使用：
 
 ```bash
 npm run release:setup:mac
@@ -58,79 +58,79 @@ npm run release:doctor:mac
 npm run release:mac
 ```
 
-## Local secrets
+## 本地密钥
 
-Do not commit Apple signing or notarization values into the repo.
+不要把 Apple 签名或公证的值提交到仓库。
 
-BenchLocal uses a local ignored file:
+BenchLocal 使用一个被忽略的本地文件：
 
 ```text
 .env.release.local
 ```
 
-An example template is committed as:
+示例模板已提交在：
 
 ```text
 .env.release.example
 ```
 
-Use the interactive setup helper:
+使用交互式配置助手：
 
 ```bash
 npm run release:setup:mac
 ```
 
-Validate the local release environment:
+校验本地发布环境：
 
 ```bash
 npm run release:doctor:mac
 ```
 
-Build a signed release with local secrets loaded:
+在加载本地密钥后构建签名发布：
 
 ```bash
 npm run release:mac
 ```
 
-This command builds, signs, and notarizes the release, and staples the produced `.app`.
+该命令会构建、签名并公证发布产物，并为生成的 `.app` 装订（staple）票据。
 
-## Signing vs notarization
+## 签名与公证
 
-These are separate steps.
+这是两个独立的步骤。
 
-### Signing
+### 签名
 
-Signing happens locally with the certificate in your keychain.
+签名在本地使用钥匙串中的证书完成。
 
-BenchLocal expects:
+BenchLocal 需要：
 
 - `CSC_NAME`
-  - the signing identity name from Keychain Access, without the `Developer ID Application:` prefix
+  - 来自「钥匙串访问」的签名标识名称，不含 `Developer ID Application:` 前缀
 
-### Notarization
+### 公证
 
-Notarization talks to Apple after the app has already been signed.
+公证发生在应用完成签名之后，与 Apple 通信。
 
-BenchLocal supports both notarization flows:
+BenchLocal 支持两种公证流程：
 
-- App Store Connect API key
-- Apple ID + app-specific password
+- App Store Connect API 密钥
+- Apple ID + App 专用密码
 
-Preferred:
+优先使用：
 
 - `APPLE_API_KEY`
 - `APPLE_API_KEY_ID`
 - `APPLE_API_ISSUER`
 
-Fallback:
+备用：
 
 - `APPLE_ID`
 - `APPLE_APP_SPECIFIC_PASSWORD`
 - `APPLE_TEAM_ID`
 
-## Verification commands
+## 验证命令
 
-Useful local checks after a release build:
+发布构建后有用的本地检查：
 
 ```bash
 codesign --verify --deep --strict --verbose=2 app/dist/mac-arm64/BenchLocal.app
@@ -139,33 +139,33 @@ spctl --assess --type execute --verbose=4 app/dist/mac-arm64/BenchLocal.app
 xcrun stapler validate app/dist/mac-arm64/BenchLocal.app
 ```
 
-BenchLocal treats the notarized `.app` as the authoritative artifact for trust validation. The generated `.dmg` is the delivery container.
+BenchLocal 将公证后的 `.app` 作为信任验证的权威产物；生成的 `.dmg` 只是交付容器。
 
-## Typical local release flow
+## 典型的本地发布流程
 
-1. Ensure the correct `Developer ID Application` certificate is installed locally.
-2. Create or update `.env.release.local`.
-3. Run:
+1. 确认本地已安装正确的 `Developer ID Application` 证书。
+2. 创建或更新 `.env.release.local`。
+3. 运行：
 
 ```bash
 npm run release:doctor:mac
 npm run release:mac
 ```
 
-4. Validate the produced artifacts.
-5. Upload the finished `.dmg` and `.zip` to GitHub Releases.
+4. 验证生成的产物。
+5. 将完成的 `.dmg` 和 `.zip` 上传到 GitHub Releases。
 
-This repo intentionally supports local-only release management without putting Apple credentials into GitHub.
+本仓库有意支持纯本地的发布管理，无需将 Apple 凭据放入 GitHub。
 
-## Output
+## 输出
 
-Artifacts are written to:
+产物写入：
 
 ```text
 app/dist/
 ```
 
-Typical output:
+典型输出：
 
 - `BenchLocal-<version>-apple-silicon.dmg`
 - `BenchLocal-<version>-apple-silicon.zip`

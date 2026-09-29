@@ -1,47 +1,47 @@
-# Bench Pack Authoring Guide
+# Bench Pack 编写指南
 
-## Purpose
+## 目的
 
-This guide describes the recommended structure for a Bench Pack that BenchLocal can install and run.
+本指南描述 BenchLocal 可以安装和运行的 Bench Pack 的推荐结构。
 
-Bench Packs should be plain benchmark repos by default:
+Bench Pack 默认应是普通的基准测试仓库：
 
-- a standalone web app is optional
-- a CLI runner is recommended
-- a verifier runtime is optional and only needed when the benchmark requires exact external validation
+- 独立的 Web 应用是可选的
+- 推荐提供 CLI 运行器
+- 验证器运行时是可选的，仅当基准测试需要精确的外部校验时才需要
 
-## Canonical metadata source
+## 规范元数据来源
 
-All Bench Pack metadata belongs in:
+所有 Bench Pack 元数据都应放在：
 
 ```text
 benchlocal.pack.json
 ```
 
-That file is the single authored metadata source.
+该文件是唯一的编写的元数据来源。
 
-Do not duplicate name, version, author, description, sampling defaults, or verifier metadata inside `benchlocal/index.ts`.
+不要在 `benchlocal/index.ts` 中重复 name、version、author、description、采样默认值或验证器元数据。
 
-The runtime entry should load and export the JSON manifest.
+运行时入口应加载并导出该 JSON 清单。
 
-## Required runtime artifact
+## 必需的运行时产物
 
-BenchLocal expects every built artifact to include:
+BenchLocal 要求每个构建产物都包含：
 
 ```text
 benchlocal.pack.json
 dist/benchlocal/index.js
 ```
 
-Optional runtime content:
+可选的运行时内容：
 
 - `verification/`
 - `README.md`
 - `METHODOLOGY.md`
 
-## Recommended repo shapes
+## 推荐的仓库结构
 
-### Minimal Bench Pack
+### 最小 Bench Pack
 
 ```text
 benchlocal.pack.json
@@ -59,7 +59,7 @@ METHODOLOGY.md
 LICENSE
 ```
 
-### Verifier-dependent Bench Pack
+### 依赖验证器的 Bench Pack
 
 ```text
 benchlocal.pack.json
@@ -72,7 +72,7 @@ verification/
   Dockerfile
   server.mjs
   core.mjs
-scripts/          # optional local verifier helpers
+scripts/          # 可选的本地验证器辅助脚本
 package.json
 tsconfig.json
 tsconfig.benchlocal.json
@@ -82,21 +82,21 @@ METHODOLOGY.md
 LICENSE
 ```
 
-## Source layout rules
+## 源码布局规则
 
-- `lib/` owns benchmark behavior
-  - scenarios
-  - prompts
-  - scoring
-  - provider requests
-  - verifier client logic where needed
-- `benchlocal/index.ts` is the BenchLocal adapter layer
-- `cli/` is recommended for local testing and debugging
-- `verification/` is only for exact external validation that cannot live entirely inside the pack runtime
+- `lib/` 负责基准测试行为
+  - 场景
+  - 提示词
+  - 评分
+  - 提供商请求
+  - 需要时的验证器客户端逻辑
+- `benchlocal/index.ts` 是 BenchLocal 适配层
+- `cli/` 推荐用于本地测试和调试
+- `verification/` 只用于无法完全放在包运行时内部的精确外部校验
 
-## Package dependencies
+## 包依赖
 
-Bench Packs should depend on the published public packages:
+Bench Pack 应依赖已发布的公共包：
 
 ```json
 {
@@ -107,21 +107,21 @@ Bench Packs should depend on the published public packages:
 }
 ```
 
-Use the current published version in real packs. The version above is an example, not a promise that it will stay current.
+实际的包中请使用当前已发布的版本。上面的版本只是示例，并不承诺它一直是最新的。
 
 ## `benchlocal/index.ts`
 
-`benchlocal/index.ts` should stay thin.
+`benchlocal/index.ts` 应保持精简。
 
-Its job is to:
+它的职责是：
 
-- load the manifest from `benchlocal.pack.json`
-- export the manifest
-- list scenarios for the desktop UI
-- bridge `HostContext` into the pack's runtime logic
-- return deterministic `ScenarioResult` values
+- 从 `benchlocal.pack.json` 加载清单
+- 导出清单
+- 为桌面 UI 列出场景
+- 将 `HostContext` 桥接到包的运行时逻辑
+- 返回确定性的 `ScenarioResult` 值
 
-Example:
+示例：
 
 ```ts
 import {
@@ -169,9 +169,9 @@ export default defineBenchPack({
 });
 ```
 
-## Sampling defaults
+## 采样默认值
 
-Bench Pack authors can declare recommended defaults in `benchlocal.pack.json`:
+Bench Pack 作者可以在 `benchlocal.pack.json` 中声明推荐默认值：
 
 ```json
 {
@@ -181,18 +181,18 @@ Bench Pack authors can declare recommended defaults in `benchlocal.pack.json`:
 }
 ```
 
-Behavior:
+行为：
 
-- if a Bench Pack provides a default, BenchLocal uses it unless the user overrides it in that tab
-- if a field is omitted by the pack and the user, BenchLocal omits it unless that field has an explicit BenchLocal default
-- omitted sampling fields are not sent by BenchLocal, so the inference backend uses whatever defaults it was started or configured with
-- BenchLocal currently applies only `request_timeout_seconds: 300` unless your pack or the user overrides it
+- 如果 Bench Pack 提供了默认值，BenchLocal 会使用它，除非用户在该标签页中覆盖
+- 如果包和用户都省略了某个字段，BenchLocal 会省略它，除非该字段有显式的 BenchLocal 默认值
+- 被省略的采样字段不会由 BenchLocal 发送，推理后端会使用其启动或配置时的默认值
+- 除非你的包或用户覆盖，BenchLocal 目前只应用 `request_timeout_seconds: 300`
 
-## Compatibility requirements
+## 兼容性要求
 
-If your pack depends on a newer BenchLocal client feature, declare that in `benchlocal.pack.json` so older clients fail early and clearly.
+如果你的包依赖较新的 BenchLocal 客户端功能，请在 `benchlocal.pack.json` 中声明，以便旧客户端尽早且清晰地报错。
 
-Example:
+示例：
 
 ```json
 {
@@ -205,39 +205,39 @@ Example:
 }
 ```
 
-Use this when your pack requires:
+在以下情况使用它：
 
-- a minimum BenchLocal client release
-- a host-managed runtime feature such as inference endpoints
-- an upper client-version bound for a future breaking change
+- 你的包要求最低的 BenchLocal 客户端版本
+- 你的包要求宿主管理的运行时功能（如推理端点）
+- 为将来的破坏性变更设置客户端版本上限
 
-## Non-verifier vs verifier-dependent packs
+## 无验证器与依赖验证器的包
 
-### Non-verifier packs
+### 无验证器的包
 
-The common case is a pack that only needs model access and scoring logic.
+常见情况是只需要模型访问和评分逻辑的包。
 
-These packs:
+这类包：
 
-- do not declare `verifiers`
-- do not ship `verification/`
-- rely only on provider/model access from `HostContext`
+- 不声明 `verifiers`
+- 不附带 `verification/`
+- 只依赖 `HostContext` 提供的提供商/模型访问
 
-If your pack embeds an external agent runtime that expects its own OpenAI-compatible base URL, prefer `createHostHelpers(context).getRequiredInferenceEndpoint(modelId)` over wiring provider secrets into the pack runtime directly. This keeps model selection and upstream credentials owned by BenchLocal.
+如果你的包嵌入了期望自己的 OpenAI 兼容 base URL 的外部 Agent 运行时，请优先使用 `createHostHelpers(context).getRequiredInferenceEndpoint(modelId)`，而不是把提供商密钥直接接入包运行时。这样模型选择和上游凭据的所有权保持在 BenchLocal。
 
-If that runtime lives inside a Docker verifier, forward `dockerBaseUrl ?? baseUrl` to the verifier rather than the upstream provider credentials.
+如果该运行时位于 Docker 验证器内，请把 `dockerBaseUrl ?? baseUrl` 转发给验证器，而不是转发上游提供商凭据。
 
-### Verifier-dependent packs
+### 依赖验证器的包
 
-Use a verifier only when the benchmark genuinely needs external execution or exact checking.
+仅当基准测试确实需要外部执行或精确校验时才使用验证器。
 
-If a pack requires a verifier:
+如果包需要验证器：
 
-- declare it in `benchlocal.pack.json`
-- include the runtime in `verification/`
-- use `createHostHelpers(context).getRequiredVerifier(...)` to consume the resolved endpoint
+- 在 `benchlocal.pack.json` 中声明它
+- 将运行时包含在 `verification/` 中
+- 使用 `createHostHelpers(context).getRequiredVerifier(...)` 消费解析出的端点
 
-Example manifest fragment:
+清单片段示例：
 
 ```json
 {
@@ -257,20 +257,20 @@ Example manifest fragment:
 }
 ```
 
-Important:
+重要：
 
-- BenchLocal assigns the host port automatically
-- the pack only declares the internal `listenPort`
+- BenchLocal 自动分配宿主端口
+- 包只声明内部的 `listenPort`
 
-## CLI testing
+## CLI 测试
 
-The CLI runner is not required by BenchLocal, but it is useful for:
+BenchLocal 不强制要求 CLI 运行器，但它对以下场景很有用：
 
-- local benchmark debugging
-- methodology verification
-- reproducing pack behavior outside the desktop app
+- 本地基准测试调试
+- 方法论验证
+- 在桌面应用之外复现包行为
 
-## Recommended scripts
+## 推荐的脚本
 
 ```json
 {
@@ -282,13 +282,13 @@ The CLI runner is not required by BenchLocal, but it is useful for:
 }
 ```
 
-## Packaging checklist
+## 打包检查清单
 
-When shipping a Bench Pack artifact:
+发布 Bench Pack 产物时：
 
-- keep `benchlocal.pack.json` at repo root
-- compile the BenchLocal adapter to `dist/benchlocal/index.js`
-- include `verification/` only if the pack actually requires it
-- avoid shipping repo-local development files that are not needed at runtime
+- 将 `benchlocal.pack.json` 保持在仓库根目录
+- 将 BenchLocal 适配层编译到 `dist/benchlocal/index.js`
+- 仅当包确实需要时才包含 `verification/`
+- 避免打包运行时不需要的仓库本地开发文件
 
-BenchLocal validates the artifact before activation, so the runtime surface should stay small, deterministic, and explicit.
+BenchLocal 会在激活前校验产物，因此运行时的表面应保持精简、确定且显式。

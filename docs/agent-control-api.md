@@ -1,29 +1,29 @@
-# Agent API and MCP Developer Reference
+# Agent API 与 MCP 开发者参考
 
-This document is the durable reference for BenchLocal's local agent surface:
+本文档是 BenchLocal 本地 Agent 接口的长期参考：
 
-- HTTP JSON commands for state reads and mutations
-- Server-Sent Events for live progress and state changes
-- MCP Streamable HTTP for standard agent tool calls
+- 通过 HTTP JSON 命令读取与变更状态
+- 通过 Server-Sent Events 获取实时进度与状态变化
+- 通过 MCP Streamable HTTP 进行标准 Agent 工具调用
 
-Keep this file updated whenever a UI feature becomes agent-controllable.
+每当 UI 功能变为 Agent 可控时，请同步更新本文件。
 
-## Design Contract
+## 设计契约
 
-BenchLocal is a desktop benchmark app first. The agent surface must expose the same operations the UI exposes without creating a second execution path.
+BenchLocal 首先是一个桌面基准测试应用。Agent 接口必须暴露与 UI 相同的操作，且不得创建第二条执行路径。
 
-Core rules:
+核心规则：
 
-- The Electron renderer keeps using IPC through `window.benchlocal`.
-- The Agent API and MCP call the same main-process controller as IPC.
-- Commands use HTTP JSON or MCP tools.
-- Live progress uses SSE events or MCP recent-event polling.
-- Long-running benchmark commands return quickly and continue in the UI.
-- Provider secrets are never returned by HTTP, SSE, MCP resources, or MCP tool results.
-- Agent access is explicit, token-protected, and local-first.
-- BenchLocal does not execute arbitrary shell commands for agents.
+- Electron 渲染进程继续通过 `window.benchlocal` 使用 IPC。
+- Agent API 与 MCP 调用与 IPC 相同的主进程控制器。
+- 命令使用 HTTP JSON 或 MCP 工具。
+- 实时进度通过 SSE 事件或 MCP 近期事件轮询获取。
+- 耗时较长的基准测试命令快速返回，并在 UI 中继续执行。
+- 提供商密钥绝不会通过 HTTP、SSE、MCP 资源或 MCP 工具结果返回。
+- Agent 访问是显式的、受令牌保护的、本地优先的。
+- BenchLocal 不为 Agent 执行任意 shell 命令。
 
-Implementation files:
+实现文件：
 
 ```text
 app/src/main/controller.ts
@@ -45,29 +45,29 @@ packages/benchlocal-core/src/workspaces.ts
   Workspace, tab, model selection, execution mode, and sampling state.
 ```
 
-## Runtime Model
+## 运行时模型
 
-Agent Access can be enabled from Settings > Agent Access.
+可以在「设置 > Agent 访问」中启用 Agent 访问。
 
-The server listens on:
+服务器监听在：
 
-- `127.0.0.1` when access is `localhost`
-- `0.0.0.0` when access is `local_network`
+- 当 access 为 `localhost` 时监听 `127.0.0.1`
+- 当 access 为 `local_network` 时监听 `0.0.0.0`
 
-The UI always shows a local client URL like:
+UI 始终显示形如以下的本地客户端 URL：
 
 ```text
 http://127.0.0.1:<port>
 ```
 
-Agents on another device must use the host machine's LAN IP when `local_network` is enabled.
+启用 `local_network` 后，其他设备上的 Agent 必须使用宿主机的局域网 IP。
 
-The port is either:
+端口要么是：
 
-- the configured port
-- an automatically assigned port when no port is configured
+- 已配置的端口
+- 未配置端口时自动分配的端口
 
-Environment overrides:
+环境变量覆盖：
 
 ```bash
 BENCHLOCAL_AGENT_API=1
@@ -76,25 +76,25 @@ BENCHLOCAL_AGENT_ACCESS=localhost
 BENCHLOCAL_AGENT_ACCESS=local_network
 ```
 
-Token storage:
+令牌存储：
 
 ```text
 ~/.benchlocal/agent-session.json
 ```
 
-The session file contains the bearer token and is written with owner-only permissions when created by BenchLocal.
+会话文件包含 Bearer 令牌，由 BenchLocal 创建时以仅所有者可读写的权限写入。
 
-## Authentication
+## 认证
 
-All endpoints except `GET /v1/health` require:
+除 `GET /v1/health` 外，所有端点都要求：
 
 ```http
 Authorization: Bearer <token>
 ```
 
-The token is shown in Settings > Agent Access and can be regenerated there.
+令牌显示在「设置 > Agent 访问」中，可以在那里重新生成。
 
-Unauthorized requests return:
+未认证的请求返回：
 
 ```json
 {
@@ -105,20 +105,20 @@ Unauthorized requests return:
 }
 ```
 
-MCP requests also enforce an Origin guard. If an `Origin` header is present, it must be localhost:
+MCP 请求还强制执行 Origin 检查。如果存在 `Origin` 头，它必须是 localhost：
 
 - `localhost`
 - `127.0.0.1`
 - `::1`
 - `[::1]`
 
-This is intentionally stricter than normal HTTP routes because MCP clients may be browser-adjacent.
+这有意比普通 HTTP 路由更严格，因为 MCP 客户端可能与浏览器相邻。
 
-## URL and JSON Rules
+## URL 与 JSON 规则
 
-Path IDs must be URL-encoded. This is required for model IDs and provider IDs that contain `:`, `/`, spaces, or UUID-like provider prefixes.
+路径中的 ID 必须进行 URL 编码。包含 `:`、`/`、空格或 UUID 形式提供商前缀的模型 ID 与提供商 ID 都需要这样处理。
 
-Example:
+示例：
 
 ```bash
 MODEL_ID='huggingface:Qwen/Qwen3.5-9B'
@@ -126,15 +126,15 @@ curl "$BENCHLOCAL_AGENT_BASE_URL/v1/models/$(node -e 'console.log(encodeURICompo
   -H "Authorization: Bearer $BENCHLOCAL_AGENT_TOKEN"
 ```
 
-JSON write endpoints reject unknown fields. This is deliberate:
+JSON 写入端点拒绝未知字段。这是有意为之：
 
-- agents get fast feedback when they drift from the contract
-- accidental writes do not silently mutate future config
-- UI and API payloads stay aligned
+- Agent 偏离契约时能得到快速反馈
+- 意外的写入不会静默改动未来的配置
+- UI 与 API 的载荷保持一致
 
-Request bodies are limited to 1 MB.
+请求体上限为 1 MB。
 
-Errors use:
+错误使用如下格式：
 
 ```json
 {
@@ -145,15 +145,15 @@ Errors use:
 }
 ```
 
-## Discovery Endpoints
+## 发现端点
 
 ### `GET /v1/health`
 
-No auth required.
+无需认证。
 
-Returns runtime status and documentation links.
+返回运行时状态与文档链接。
 
-Example response:
+示例响应：
 
 ```json
 {
@@ -180,33 +180,33 @@ Example response:
 
 ### `GET /v1/agent-guide`
 
-Auth required.
+需要认证。
 
-Returns agent-readable Markdown generated by the running app. This is intentionally shorter than this developer reference and is meant for runtime agent bootstrapping.
+返回由运行中的应用生成的 Agent 可读 Markdown。它有意比这份开发者参考更短，用于运行时的 Agent 引导。
 
 ### `GET /v1/openapi.json`
 
-Auth required.
+需要认证。
 
-Returns the OpenAPI document generated by the running app.
+返回由运行中的应用生成的 OpenAPI 文档。
 
-The OpenAPI document is useful for endpoint discovery, but the schemas are intentionally lightweight today. This doc remains the source of implementation guidance.
+OpenAPI 文档有助于端点发现，但目前其 schema 有意保持轻量。本档仍是实现指引的权威来源。
 
 ### `POST /mcp`
 
-Auth required.
+需要认证。
 
-Standard MCP Streamable HTTP endpoint. See [MCP Surface](#mcp-surface).
+标准的 MCP Streamable HTTP 端点。参见 [MCP 接口](#mcp-接口)。
 
-`POST /v1/mcp` is also accepted.
+`POST /v1/mcp` 也被接受。
 
-## SSE Event Stream
+## SSE 事件流
 
 ### `GET /v1/events`
 
-Auth required.
+需要认证。
 
-Opens a Server-Sent Events stream.
+打开一条 Server-Sent Events 流。
 
 ```bash
 curl -N \
@@ -214,13 +214,13 @@ curl -N \
   "$BENCHLOCAL_AGENT_BASE_URL/v1/events"
 ```
 
-Initial response includes a comment:
+初始响应包含一条注释：
 
 ```text
 : BenchLocal agent event stream
 ```
 
-Each event is sent as:
+每个事件的发送格式：
 
 ```text
 id: evt-...
@@ -228,7 +228,7 @@ event: benchpack.run.event
 data: {"eventId":"evt-...","createdAt":"...","type":"benchpack.run.event","payload":{}}
 ```
 
-Event envelope:
+事件信封：
 
 ```ts
 type BenchLocalAgentEvent<TPayload = unknown> = {
@@ -239,7 +239,7 @@ type BenchLocalAgentEvent<TPayload = unknown> = {
 };
 ```
 
-Current event types:
+当前事件类型：
 
 ```text
 agent.state.updated
@@ -253,7 +253,7 @@ benchpack.run.error
 verifier.event
 ```
 
-Important payloads:
+重要载荷：
 
 ```ts
 type BenchLocalAgentWorkspaceUpdatedPayload = {
@@ -275,13 +275,13 @@ type BenchLocalAgentRunEventPayload = {
 };
 ```
 
-`benchpack.run.event` wraps the Bench Pack host progress event. The nested `event` may include scenario start, model progress, scenario result, run finish, run error, and other Bench Pack progress messages.
+`benchpack.run.event` 包装 Bench Pack 宿主进度事件。嵌套的 `event` 可能包含场景开始、模型进度、场景结果、运行完成、运行错误及其他 Bench Pack 进度消息。
 
-SSE is read-only. Do not add command semantics to SSE.
+SSE 是只读的。不要向 SSE 添加命令语义。
 
-## Shared Types
+## 共享类型
 
-### Provider
+### 提供商（Provider）
 
 ```ts
 type BenchLocalProviderKind =
@@ -304,7 +304,7 @@ type BenchLocalProviderConfig = {
 };
 ```
 
-API and MCP provider reads redact `api_key` and expose:
+API 与 MCP 的提供商读取会脱敏 `api_key` 并暴露：
 
 ```ts
 type SafeProvider = Omit<BenchLocalProviderConfig, "api_key"> & {
@@ -313,7 +313,7 @@ type SafeProvider = Omit<BenchLocalProviderConfig, "api_key"> & {
 };
 ```
 
-### Model
+### 模型（Model）
 
 ```ts
 type BenchLocalModelConfig = {
@@ -326,9 +326,9 @@ type BenchLocalModelConfig = {
 };
 ```
 
-`provider` is the provider ID, not the provider display name.
+`provider` 是提供商 ID，而不是提供商显示名。
 
-### Workspace Tab
+### 工作区标签页
 
 ```ts
 type BenchLocalExecutionMode =
@@ -358,7 +358,7 @@ type BenchLocalWorkspaceTab = {
 };
 ```
 
-### Generation
+### 生成参数
 
 ```ts
 type GenerationRequest = {
@@ -372,24 +372,24 @@ type GenerationRequest = {
 };
 ```
 
-Default request timeout is defined in core as `DEFAULT_BENCHLOCAL_REQUEST_TIMEOUT_SECONDS`.
+默认请求超时在 core 中定义为 `DEFAULT_BENCHLOCAL_REQUEST_TIMEOUT_SECONDS`。
 
-## HTTP API Reference
+## HTTP API 参考
 
-All examples assume:
+所有示例假定：
 
 ```bash
 export BENCHLOCAL_AGENT_BASE_URL="http://127.0.0.1:50060"
 export BENCHLOCAL_AGENT_TOKEN="<token from Settings > Agent Access>"
 ```
 
-### Read State
+### 读取状态
 
 #### `GET /v1/config`
 
-Returns redacted BenchLocal config.
+返回脱敏后的 BenchLocal 配置。
 
-Response:
+响应：
 
 ```json
 {
@@ -415,7 +415,7 @@ Response:
 
 #### `GET /v1/workspaces`
 
-Returns the full workspace state:
+返回完整的工作区状态：
 
 ```json
 {
@@ -433,7 +433,7 @@ Returns the full workspace state:
 
 #### `GET /v1/benchpacks`
 
-Returns installed Bench Packs and scenario metadata:
+返回已安装的 Bench Pack 与场景元数据：
 
 ```json
 {
@@ -443,7 +443,7 @@ Returns installed Bench Packs and scenario metadata:
 
 #### `GET /v1/benchpacks/registry`
 
-Returns registry entries for installable Bench Packs:
+返回可安装 Bench Pack 的注册表条目：
 
 ```json
 {
@@ -453,7 +453,7 @@ Returns registry entries for installable Bench Packs:
 
 #### `GET /v1/providers`
 
-Returns configured providers with secrets redacted:
+返回已配置的提供商（密钥已脱敏）：
 
 ```json
 {
@@ -473,7 +473,7 @@ Returns configured providers with secrets redacted:
 
 #### `GET /v1/providers/:providerId`
 
-Returns one redacted provider:
+返回单个脱敏后的提供商：
 
 ```json
 {
@@ -492,9 +492,9 @@ Returns one redacted provider:
 
 #### `GET /v1/providers/:providerId/models/discover`
 
-Discovers provider models when the provider supports browsing.
+当提供商支持浏览时，发现提供商的模型。
 
-Response:
+响应：
 
 ```json
 {
@@ -502,11 +502,11 @@ Response:
 }
 ```
 
-This may call an external provider API and can fail when credentials or network access are unavailable.
+这可能会调用外部提供商 API，在凭据或网络不可用时可能失败。
 
 #### `GET /v1/models`
 
-Returns configured models:
+返回已配置的模型：
 
 ```json
 {
@@ -525,7 +525,7 @@ Returns configured models:
 
 #### `GET /v1/models/:modelId`
 
-Returns one configured model:
+返回单个已配置的模型：
 
 ```json
 {
@@ -542,9 +542,9 @@ Returns one configured model:
 
 #### `GET /v1/models/availability`
 
-Checks model availability for all configured models.
+检查所有已配置模型的可用性。
 
-Response:
+响应：
 
 ```json
 {
@@ -558,11 +558,11 @@ Response:
 }
 ```
 
-Exact availability fields are defined by `ModelAvailability` in `packages/benchlocal-core/src/protocol.ts`.
+确切的可用性字段由 `packages/benchlocal-core/src/protocol.ts` 中的 `ModelAvailability` 定义。
 
 #### `GET /v1/runs/active`
 
-Returns active benchmark runs:
+返回活动的基准测试运行：
 
 ```json
 {
@@ -572,7 +572,7 @@ Returns active benchmark runs:
 
 #### `GET /v1/verifiers`
 
-Returns verifier runtime status:
+返回验证器运行时状态：
 
 ```json
 {
@@ -582,7 +582,7 @@ Returns verifier runtime status:
 
 #### `GET /v1/benchpacks/:benchPackId/history`
 
-Returns run history entries for a Bench Pack:
+返回某个 Bench Pack 的运行历史条目：
 
 ```json
 {
@@ -592,7 +592,7 @@ Returns run history entries for a Bench Pack:
 
 #### `GET /v1/benchpacks/:benchPackId/history/:runId`
 
-Returns a saved run summary:
+返回已保存的运行摘要：
 
 ```json
 {
@@ -600,13 +600,13 @@ Returns a saved run summary:
 }
 ```
 
-### Providers
+### 提供商
 
 #### `POST /v1/providers`
 
-Creates a provider.
+创建提供商。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -620,7 +620,7 @@ Allowed fields:
 }
 ```
 
-Example:
+示例：
 
 ```bash
 curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/providers" \
@@ -636,13 +636,13 @@ curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/providers" \
   }'
 ```
 
-Returns `201`.
+返回 `201`。
 
 #### `PATCH /v1/providers/:providerId`
 
-Patches a provider.
+修补提供商。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -655,34 +655,34 @@ Allowed fields:
 }
 ```
 
-Use `null` for `api_key` or `api_key_env` to clear stored values when supported by the controller.
+当控制器支持时，对 `api_key` 或 `api_key_env` 使用 `null` 可清除已存储的值。
 
 #### `DELETE /v1/providers/:providerId`
 
-Deletes a provider.
+删除提供商。
 
-Important behavior:
+重要行为：
 
-- deletes linked models
-- removes linked models from tab selections
-- broadcasts config/workspace updates through the controller
+- 删除关联的模型
+- 从标签页选择中移除关联的模型
+- 通过控制器广播配置/工作区更新
 
 #### `POST /v1/providers/:providerId/duplicate`
 
-Duplicates one provider record.
+复制一条提供商记录。
 
-Important behavior:
+重要行为：
 
-- duplicates only the provider
-- does not duplicate linked models
+- 只复制提供商本身
+- 不复制关联的模型
 
-### Models
+### 模型
 
 #### `POST /v1/models`
 
-Creates a model.
+创建模型。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -695,7 +695,7 @@ Allowed fields:
 }
 ```
 
-Example:
+示例：
 
 ```bash
 curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/models" \
@@ -711,13 +711,13 @@ curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/models" \
   }'
 ```
 
-Returns `201`.
+返回 `201`。
 
 #### `PATCH /v1/models/:modelId`
 
-Patches a model.
+修补模型。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -730,21 +730,21 @@ Allowed fields:
 }
 ```
 
-If the ID changes, the controller must preserve consistency with tab selections.
+如果 ID 发生变化，控制器必须保持与标签页选择的一致性。
 
 #### `DELETE /v1/models/:modelId`
 
-Deletes one model and removes it from tab selections.
+删除一个模型并从标签页选择中移除它。
 
 #### `POST /v1/models/:modelId/duplicate`
 
-Duplicates one model record.
+复制一条模型记录。
 
 #### `POST /v1/models/availability/refresh`
 
-Refreshes model availability globally or for selected model IDs.
+全局刷新或针对所选模型 ID 刷新模型可用性。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -752,7 +752,7 @@ Allowed fields:
 }
 ```
 
-Example:
+示例：
 
 ```bash
 curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/models/availability/refresh" \
@@ -761,7 +761,7 @@ curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/models/availability/refresh" \
   -d '{"modelIds":["huggingface:Qwen/Qwen3.5-9B"]}'
 ```
 
-Response:
+响应：
 
 ```json
 {
@@ -769,15 +769,15 @@ Response:
 }
 ```
 
-Also emits `models.availability.updated` when the controller broadcasts availability changes.
+当控制器广播可用性变化时，还会发出 `models.availability.updated`。
 
-### Workspace and Tabs
+### 工作区与标签页
 
 #### `POST /v1/workspaces/:workspaceId/tabs`
 
-Creates a workspace tab.
+创建工作区标签页。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -787,7 +787,7 @@ Allowed fields:
 }
 ```
 
-Example:
+示例：
 
 ```bash
 curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/workspaces/$WORKSPACE_ID/tabs" \
@@ -802,13 +802,13 @@ curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/workspaces/$WORKSPACE_ID/tabs" \
   }'
 ```
 
-Returns `201` and the updated workspace state.
+返回 `201` 和更新后的工作区状态。
 
 #### `PATCH /v1/tabs/:tabId`
 
-Patches a tab.
+修补标签页。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -821,13 +821,13 @@ Allowed fields:
 }
 ```
 
-Use this for compound updates. Prefer the more specific endpoints below for common UI actions because they document intent better.
+用于复合更新。对于常见 UI 操作，优先使用下面更具体的端点，因为它们能更好地表达意图。
 
 #### `POST /v1/tabs/:tabId/select-benchpack`
 
-Selects or clears a Bench Pack for a tab.
+为标签页选择或清除 Bench Pack。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -838,9 +838,9 @@ Allowed fields:
 
 #### `POST /v1/tabs/:tabId/select-models`
 
-Selects models for a tab.
+为标签页选择模型。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -849,9 +849,9 @@ Allowed fields:
 }
 ```
 
-`modelIds` is the compact form. `selections` is the explicit form and supports aliases.
+`modelIds` 是简洁形式。`selections` 是显式形式，支持别名。
 
-Example:
+示例：
 
 ```bash
 curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/tabs/$TAB_ID/select-models" \
@@ -867,9 +867,9 @@ curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/tabs/$TAB_ID/select-models" \
 
 #### `POST /v1/tabs/:tabId/sampling`
 
-Sets tab sampling overrides.
+设置标签页采样参数覆盖。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -877,7 +877,7 @@ Allowed fields:
 }
 ```
 
-Example:
+示例：
 
 ```json
 {
@@ -891,9 +891,9 @@ Example:
 
 #### `POST /v1/tabs/:tabId/execution-mode`
 
-Sets tab execution mode and optionally runs-per-test.
+设置标签页执行模式，以及可选的每测试运行次数。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -902,7 +902,7 @@ Allowed fields:
 }
 ```
 
-Execution mode values:
+执行模式取值：
 
 ```text
 serial
@@ -914,9 +914,9 @@ full_parallel
 
 #### `POST /v1/tabs/:tabId/runs-per-test`
 
-Sets tab runs-per-test.
+设置标签页每测试运行次数。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -926,9 +926,9 @@ Allowed fields:
 
 #### `POST /v1/tabs/:tabId/models/availability/refresh`
 
-Refreshes availability for a tab.
+刷新标签页的可用性。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -936,17 +936,17 @@ Allowed fields:
 }
 ```
 
-If `modelIds` is omitted, the selected model IDs from the tab are used.
+如果省略 `modelIds`，则使用该标签页所选的模型 ID。
 
-### Runs
+### 运行
 
-Run commands are asynchronous unless otherwise noted. They return quickly, while detailed progress is emitted through `GET /v1/events` and visible in the desktop UI.
+除非另有说明，运行命令是异步的。它们快速返回，详细进度通过 `GET /v1/events` 发出，并可在桌面 UI 中看到。
 
 #### `POST /v1/tabs/:tabId/runs`
 
-Starts a run for a tab.
+为标签页启动一次运行。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -958,15 +958,15 @@ Allowed fields:
 }
 ```
 
-Resolution behavior:
+解析行为：
 
-- `benchPackId` defaults to the tab's selected Bench Pack
-- `modelIds` defaults to the tab's selected models
-- `executionMode` defaults to the tab's execution mode
-- `runsPerTest` defaults to the tab's runs-per-test
-- `generation` defaults to the tab's sampling overrides
+- `benchPackId` 默认取标签页所选的 Bench Pack
+- `modelIds` 默认取标签页所选的模型
+- `executionMode` 默认取标签页的执行模式
+- `runsPerTest` 默认取标签页的每测试运行次数
+- `generation` 默认取标签页的采样参数覆盖
 
-Response:
+响应：
 
 ```json
 {
@@ -975,23 +975,23 @@ Response:
 }
 ```
 
-Status code: `202`.
+状态码：`202`。
 
-The run will set `loadedRunId` on the tab after a summary is produced.
+生成摘要后，运行会在标签页上设置 `loadedRunId`。
 
 #### `POST /v1/tabs/:tabId/runs/stop`
 
-Stops the active run for a tab.
+停止标签页的活动运行。
 
-Response depends on controller state, but generally includes whether a run was stopped.
+响应取决于控制器状态，但通常包含是否停止了某次运行。
 
-Unlike start/resume/retry, this is synchronous.
+与启动/继续/重试不同，这是同步的。
 
 #### `POST /v1/tabs/:tabId/runs/:runId/resume`
 
-Resumes a historical run.
+继续一次历史运行。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -1001,7 +1001,7 @@ Allowed fields:
 }
 ```
 
-Response:
+响应：
 
 ```json
 {
@@ -1011,13 +1011,13 @@ Response:
 }
 ```
 
-Status code: `202`.
+状态码：`202`。
 
 #### `POST /v1/tabs/:tabId/runs/:runId/retry-scenario`
 
-Retries one scenario/model cell from a saved run.
+从已保存的运行中重试一个场景/模型单元格。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -1028,7 +1028,7 @@ Allowed fields:
 }
 ```
 
-Response:
+响应：
 
 ```json
 {
@@ -1038,13 +1038,13 @@ Response:
 }
 ```
 
-Status code: `202`.
+状态码：`202`。
 
 #### `POST /v1/tabs/:tabId/runs/:runId/retry-provider-errors`
 
-Retries provider-error cells from a saved run.
+从已保存的运行中重试提供商错误的单元格。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -1053,7 +1053,7 @@ Allowed fields:
 }
 ```
 
-Response when there is work:
+有待处理工作时的响应：
 
 ```json
 {
@@ -1066,9 +1066,9 @@ Response when there is work:
 }
 ```
 
-Status code: `202`.
+状态码：`202`。
 
-Response when there is no eligible work:
+没有符合条件的工作时的响应：
 
 ```json
 {
@@ -1081,15 +1081,15 @@ Response when there is no eligible work:
 }
 ```
 
-Status code: `200`.
+状态码：`200`。
 
-Provider-error classification must come from provider failure metadata and HTTP response status handling, not from scanning verifier failure summaries.
+提供商错误的归类必须来自提供商失败元数据与 HTTP 响应状态处理，而不是扫描验证器失败摘要。
 
 #### `POST /v1/tabs/:tabId/runs/:runId/retry-failed-results`
 
-Retries non-provider failed cells from a saved run.
+从已保存的运行中重试非提供商原因失败的单元格。
 
-Allowed fields:
+允许的字段：
 
 ```ts
 {
@@ -1098,7 +1098,7 @@ Allowed fields:
 }
 ```
 
-Response shape matches retry-provider-errors, with:
+响应结构与 retry-provider-errors 一致，其中：
 
 ```json
 {
@@ -1106,24 +1106,24 @@ Response shape matches retry-provider-errors, with:
 }
 ```
 
-## Recommended HTTP Workflow
+## 推荐的 HTTP 工作流
 
-This is the workflow agents should use for a live benchmark run:
+这是 Agent 进行实时基准测试运行时应使用的工作流：
 
 1. `GET /v1/health`
 2. `GET /v1/workspaces`
 3. `GET /v1/benchpacks`
 4. `GET /v1/providers`
 5. `GET /v1/models`
-6. Open `GET /v1/events` and keep it open.
-7. Create or patch a tab.
-8. Select Bench Pack and models.
-9. Refresh model availability.
-10. Set sampling, execution mode, and runs-per-test if needed.
-11. Start the run.
-12. Watch `benchpack.run.event` until a finished, cancelled, or error event appears.
+6. 打开 `GET /v1/events` 并保持连接。
+7. 创建或修补标签页。
+8. 选择 Bench Pack 与模型。
+9. 刷新模型可用性。
+10. 按需设置采样参数、执行模式与每测试运行次数。
+11. 启动运行。
+12. 观察 `benchpack.run.event`，直到出现完成、取消或错误事件。
 
-Example:
+示例：
 
 ```bash
 curl "$BENCHLOCAL_AGENT_BASE_URL/v1/benchpacks" \
@@ -1153,9 +1153,9 @@ curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/tabs/$TAB_ID/runs" \
   -d '{"executionMode":"serial_by_model","runsPerTest":1}'
 ```
 
-## MCP Surface
+## MCP 接口
 
-BenchLocal exposes MCP through:
+BenchLocal 通过以下方式暴露 MCP：
 
 ```http
 POST /mcp
@@ -1164,21 +1164,21 @@ Content-Type: application/json
 Accept: application/json, text/event-stream
 ```
 
-`POST /v1/mcp` is accepted as an alias.
+`POST /v1/mcp` 作为别名被接受。
 
-Implementation details:
+实现细节：
 
-- Uses `@modelcontextprotocol/sdk`.
-- Uses `StreamableHTTPServerTransport`.
-- `sessionIdGenerator` is disabled, so the server is stateless per request.
-- `GET`, `DELETE`, and non-`POST` requests return MCP method-not-allowed JSON-RPC errors.
-- Long-running tools return `accepted: true`; progress is obtained from the UI, recent events, or the SSE stream.
+- 使用 `@modelcontextprotocol/sdk`。
+- 使用 `StreamableHTTPServerTransport`。
+- `sessionIdGenerator` 被禁用，因此服务器按请求无状态。
+- `GET`、`DELETE` 与非 `POST` 请求返回 MCP method-not-allowed 的 JSON-RPC 错误。
+- 耗时较长的工具返回 `accepted: true`；进度从 UI、近期事件或 SSE 流获取。
 
-### MCP Client Configuration
+### MCP 客户端配置
 
-Use the bearer token as an Authorization header.
+把 Bearer 令牌用作 Authorization 头。
 
-Generic MCP client shape:
+通用 MCP 客户端结构：
 
 ```json
 {
@@ -1194,27 +1194,27 @@ Generic MCP client shape:
 }
 ```
 
-Exact configuration keys vary by MCP client.
+确切的配置键因 MCP 客户端而异。
 
-### MCP Resources
+### MCP 资源
 
-| Resource URI | Description |
+| 资源 URI | 描述 |
 | --- | --- |
-| `benchlocal://agent/guide` | Runtime agent guide Markdown. |
-| `benchlocal://agent/openapi` | Runtime OpenAPI JSON document. |
-| `benchlocal://state/config` | Redacted BenchLocal config. |
-| `benchlocal://state/workspaces` | Workspace and tab state. |
-| `benchlocal://state/benchpacks` | Installed Bench Packs and scenario metadata. |
-| `benchlocal://state/providers` | Configured providers with secrets redacted. |
-| `benchlocal://state/models` | Configured models. |
-| `benchlocal://state/runs/active` | Active benchmark runs. |
-| `benchlocal://state/events/recent` | Recent Agent API events. |
+| `benchlocal://agent/guide` | 运行时 Agent 指南 Markdown。 |
+| `benchlocal://agent/openapi` | 运行时 OpenAPI JSON 文档。 |
+| `benchlocal://state/config` | 脱敏后的 BenchLocal 配置。 |
+| `benchlocal://state/workspaces` | 工作区与标签页状态。 |
+| `benchlocal://state/benchpacks` | 已安装的 Bench Pack 与场景元数据。 |
+| `benchlocal://state/providers` | 已配置的提供商（密钥已脱敏）。 |
+| `benchlocal://state/models` | 已配置的模型。 |
+| `benchlocal://state/runs/active` | 活动的基准测试运行。 |
+| `benchlocal://state/events/recent` | 近期的 Agent API 事件。 |
 
-### MCP Prompt
+### MCP 提示词
 
 #### `benchlocal-run-benchpack`
 
-Arguments:
+参数：
 
 ```ts
 {
@@ -1224,46 +1224,46 @@ Arguments:
 }
 ```
 
-Use this prompt to teach an MCP-capable agent the preferred run workflow:
+用这个提示词教会支持 MCP 的 Agent 推荐的运行工作流：
 
-- inspect workspaces
-- choose or create a tab
-- select the Bench Pack
-- select models
-- refresh availability
-- start a run
-- poll recent events while the UI updates in real time
+- 检查工作区
+- 选择或创建标签页
+- 选择 Bench Pack
+- 选择模型
+- 刷新可用性
+- 启动运行
+- 在 UI 实时更新的同时轮询近期事件
 
-### MCP Tools
+### MCP 工具
 
-All MCP tools return JSON as text content and, where possible, structured content.
+所有 MCP 工具都以文本内容形式返回 JSON，并在可能时提供结构化内容。
 
-#### Health and State
+#### 健康与状态
 
-| Tool | Read-only | Input | Result |
+| 工具 | 只读 | 输入 | 结果 |
 | --- | --- | --- | --- |
-| `benchlocal_get_health` | yes | `{}` | Runtime compatibility and health. |
-| `benchlocal_get_config` | yes | `{}` | Redacted config. |
-| `benchlocal_list_workspaces` | yes | `{}` | Workspace and tab state. |
-| `benchlocal_list_benchpacks` | yes | `{}` | Installed Bench Packs. |
-| `benchlocal_list_benchpack_registry` | yes | `{}` | Registry entries. |
-| `benchlocal_list_active_runs` | yes | `{}` | Active runs. |
-| `benchlocal_list_verifiers` | yes | `{}` | Verifier runtime status. |
-| `benchlocal_get_recent_events` | yes | `{ limit?: number }` | Recent events, newest `limit` if provided. |
+| `benchlocal_get_health` | 是 | `{}` | 运行时兼容性与健康状态。 |
+| `benchlocal_get_config` | 是 | `{}` | 脱敏后的配置。 |
+| `benchlocal_list_workspaces` | 是 | `{}` | 工作区与标签页状态。 |
+| `benchlocal_list_benchpacks` | 是 | `{}` | 已安装的 Bench Pack。 |
+| `benchlocal_list_benchpack_registry` | 是 | `{}` | 注册表条目。 |
+| `benchlocal_list_active_runs` | 是 | `{}` | 活动运行。 |
+| `benchlocal_list_verifiers` | 是 | `{}` | 验证器运行时状态。 |
+| `benchlocal_get_recent_events` | 是 | `{ limit?: number }` | 近期事件，提供 `limit` 时返回最新 `limit` 条。 |
 
-#### Providers
+#### 提供商
 
-| Tool | Input | Result |
+| 工具 | 输入 | 结果 |
 | --- | --- | --- |
-| `benchlocal_list_providers` | `{}` | Redacted providers. |
-| `benchlocal_get_provider` | `{ providerId: string }` | One redacted provider. |
-| `benchlocal_create_provider` | `{ id?, kind, name?, enabled?, base_url, api_key?, api_key_env? }` | Created provider result. |
-| `benchlocal_update_provider` | `{ providerId, kind?, name?, enabled?, base_url?, api_key?, api_key_env? }` | Updated provider result. |
-| `benchlocal_delete_provider` | `{ providerId }` | Delete result. Destructive. |
-| `benchlocal_duplicate_provider` | `{ providerId }` | Duplicate provider result. |
-| `benchlocal_discover_provider_models` | `{ providerId }` | Provider model discovery result. |
+| `benchlocal_list_providers` | `{}` | 脱敏后的提供商。 |
+| `benchlocal_get_provider` | `{ providerId: string }` | 单个脱敏后的提供商。 |
+| `benchlocal_create_provider` | `{ id?, kind, name?, enabled?, base_url, api_key?, api_key_env? }` | 创建提供商的结果。 |
+| `benchlocal_update_provider` | `{ providerId, kind?, name?, enabled?, base_url?, api_key?, api_key_env? }` | 更新提供商的结果。 |
+| `benchlocal_delete_provider` | `{ providerId }` | 删除结果。破坏性操作。 |
+| `benchlocal_duplicate_provider` | `{ providerId }` | 复制提供商的结果。 |
+| `benchlocal_discover_provider_models` | `{ providerId }` | 提供商模型发现结果。 |
 
-`kind` must be one of:
+`kind` 必须是以下之一：
 
 ```text
 openrouter
@@ -1276,53 +1276,53 @@ pico
 openai_compatible
 ```
 
-#### Models
+#### 模型
 
-| Tool | Input | Result |
+| 工具 | 输入 | 结果 |
 | --- | --- | --- |
-| `benchlocal_list_models` | `{}` | Configured models. |
-| `benchlocal_get_model` | `{ modelId: string }` | One model. |
-| `benchlocal_create_model` | `{ id?, provider, model, label?, group?, enabled? }` | Created model result. |
-| `benchlocal_update_model` | `{ modelId, id?, provider?, model?, label?, group?, enabled? }` | Updated model result. |
-| `benchlocal_delete_model` | `{ modelId }` | Delete result. Destructive. |
-| `benchlocal_duplicate_model` | `{ modelId }` | Duplicate model result. |
-| `benchlocal_check_model_availability` | `{ modelIds?: string[] }` | Availability result. |
-| `benchlocal_refresh_model_availability` | `{ tabId?: string, modelIds?: string[] }` | Availability result. |
+| `benchlocal_list_models` | `{}` | 已配置的模型。 |
+| `benchlocal_get_model` | `{ modelId: string }` | 单个模型。 |
+| `benchlocal_create_model` | `{ id?, provider, model, label?, group?, enabled? }` | 创建模型的结果。 |
+| `benchlocal_update_model` | `{ modelId, id?, provider?, model?, label?, group?, enabled? }` | 更新模型的结果。 |
+| `benchlocal_delete_model` | `{ modelId }` | 删除结果。破坏性操作。 |
+| `benchlocal_duplicate_model` | `{ modelId }` | 复制模型的结果。 |
+| `benchlocal_check_model_availability` | `{ modelIds?: string[] }` | 可用性结果。 |
+| `benchlocal_refresh_model_availability` | `{ tabId?: string, modelIds?: string[] }` | 可用性结果。 |
 
-`benchlocal_refresh_model_availability` uses selected tab models when `tabId` is provided and `modelIds` is omitted.
+当提供 `tabId` 且省略 `modelIds` 时，`benchlocal_refresh_model_availability` 使用标签页所选的模型。
 
-#### Tabs
+#### 标签页
 
-| Tool | Input | Result |
+| 工具 | 输入 | 结果 |
 | --- | --- | --- |
-| `benchlocal_create_tab` | `{ workspaceId, benchPackId?, title?, modelSelections? }` | Updated workspace state. |
-| `benchlocal_patch_tab` | `{ tabId, title?, focusedScenarioId?, modelSelections?, samplingOverrides?, executionMode?, runsPerTest? }` | Updated workspace state. |
-| `benchlocal_select_benchpack` | `{ tabId, benchPackId, title? }` | Updated workspace state. |
-| `benchlocal_select_models` | `{ tabId, modelIds?, selections? }` | Updated workspace state. |
-| `benchlocal_set_sampling` | `{ tabId, samplingOverrides }` | Updated workspace state. |
-| `benchlocal_set_execution_mode` | `{ tabId, executionMode, runsPerTest? }` | Updated workspace state. |
-| `benchlocal_set_runs_per_test` | `{ tabId, runsPerTest }` | Updated workspace state. |
+| `benchlocal_create_tab` | `{ workspaceId, benchPackId?, title?, modelSelections? }` | 更新后的工作区状态。 |
+| `benchlocal_patch_tab` | `{ tabId, title?, focusedScenarioId?, modelSelections?, samplingOverrides?, executionMode?, runsPerTest? }` | 更新后的工作区状态。 |
+| `benchlocal_select_benchpack` | `{ tabId, benchPackId, title? }` | 更新后的工作区状态。 |
+| `benchlocal_select_models` | `{ tabId, modelIds?, selections? }` | 更新后的工作区状态。 |
+| `benchlocal_set_sampling` | `{ tabId, samplingOverrides }` | 更新后的工作区状态。 |
+| `benchlocal_set_execution_mode` | `{ tabId, executionMode, runsPerTest? }` | 更新后的工作区状态。 |
+| `benchlocal_set_runs_per_test` | `{ tabId, runsPerTest }` | 更新后的工作区状态。 |
 
-`modelSelections` and `selections` use:
+`modelSelections` 与 `selections` 使用：
 
 ```ts
 Array<{ modelId: string; alias?: string }>
 ```
 
-#### Runs
+#### 运行
 
-| Tool | Input | Result |
+| 工具 | 输入 | 结果 |
 | --- | --- | --- |
 | `benchlocal_start_run` | `{ tabId, benchPackId?, modelIds?, executionMode?, runsPerTest?, generation? }` | `{ accepted: true, tabId }` |
 | `benchlocal_resume_run` | `{ tabId, runId, executionMode?, runsPerTest?, generation? }` | `{ accepted: true, tabId, runId }` |
 | `benchlocal_retry_scenario` | `{ tabId, runId, scenarioId, modelId, runsPerTest?, generation? }` | `{ accepted: true, tabId, runId }` |
-| `benchlocal_retry_provider_errors` | `{ tabId, runId, runsPerTest?, generation? }` | Retry batch plan and accepted state. |
-| `benchlocal_retry_failed_results` | `{ tabId, runId, runsPerTest?, generation? }` | Retry batch plan and accepted state. |
-| `benchlocal_stop_run` | `{ tabId }` | Stop result. |
-| `benchlocal_list_run_history` | `{ benchPackId }` | Run history. |
-| `benchlocal_get_run_summary` | `{ benchPackId, runId }` | Saved run summary. |
+| `benchlocal_retry_provider_errors` | `{ tabId, runId, runsPerTest?, generation? }` | 重试批次计划与已接受状态。 |
+| `benchlocal_retry_failed_results` | `{ tabId, runId, runsPerTest?, generation? }` | 重试批次计划与已接受状态。 |
+| `benchlocal_stop_run` | `{ tabId }` | 停止结果。 |
+| `benchlocal_list_run_history` | `{ benchPackId }` | 运行历史。 |
+| `benchlocal_get_run_summary` | `{ benchPackId, runId }` | 已保存的运行摘要。 |
 
-Run tools that start work return before the benchmark completes. Poll with:
+启动工作的运行类工具在基准测试完成前就返回。轮询方式：
 
 ```text
 benchlocal_get_recent_events
@@ -1330,98 +1330,98 @@ benchlocal://state/events/recent
 GET /v1/events
 ```
 
-## MCP Recommended Workflow
+## MCP 推荐工作流
 
-For an agent controlling a local model benchmark:
+对于控制本地模型基准测试的 Agent：
 
-1. Read `benchlocal://state/workspaces`.
-2. Read `benchlocal://state/benchpacks`.
-3. Call `benchlocal_list_providers`.
-4. Call `benchlocal_list_models`.
-5. Create or patch a tab with `benchlocal_create_tab` or `benchlocal_patch_tab`.
-6. Select the Bench Pack with `benchlocal_select_benchpack`.
-7. Select models with `benchlocal_select_models`.
-8. Ask the user to start the external local model server, or start it outside BenchLocal if the agent has its own safe tool for that.
-9. Call `benchlocal_refresh_model_availability`.
-10. Call `benchlocal_start_run`.
-11. Poll `benchlocal_get_recent_events` while the BenchLocal UI shows the run.
-12. When the model server changes, refresh availability and resume or retry eligible results.
+1. 读取 `benchlocal://state/workspaces`。
+2. 读取 `benchlocal://state/benchpacks`。
+3. 调用 `benchlocal_list_providers`。
+4. 调用 `benchlocal_list_models`。
+5. 用 `benchlocal_create_tab` 或 `benchlocal_patch_tab` 创建或修补标签页。
+6. 用 `benchlocal_select_benchpack` 选择 Bench Pack。
+7. 用 `benchlocal_select_models` 选择模型。
+8. 请用户启动外部的本地模型服务器；如果 Agent 有自己安全的启动工具，也可以在 BenchLocal 之外启动它。
+9. 调用 `benchlocal_refresh_model_availability`。
+10. 调用 `benchlocal_start_run`。
+11. 在 BenchLocal UI 展示运行的同时轮询 `benchlocal_get_recent_events`。
+12. 模型服务器发生变化时，刷新可用性并对符合条件的结果继续或重试。
 
-## Security and Safety
+## 安全与保障
 
-Required invariants:
+必须保持的不变式：
 
-- `GET /v1/health` is the only unauthenticated route.
-- Every other HTTP route requires the bearer token.
-- MCP requires the bearer token and local Origin.
-- Config reads use `getSafeConfig`.
-- Provider reads use redacted provider helpers.
-- No route returns `api_key`.
-- Routes reject unknown JSON fields.
-- Routes do not allow arbitrary file reads or writes.
-- Routes do not allow arbitrary shell execution.
-- Destructive MCP tools are annotated with `destructiveHint`.
+- `GET /v1/health` 是唯一无需认证的路由。
+- 其他所有 HTTP 路由都要求 Bearer 令牌。
+- MCP 要求 Bearer 令牌和本地 Origin。
+- 配置读取使用 `getSafeConfig`。
+- 提供商读取使用脱敏的提供商辅助函数。
+- 没有任何路由返回 `api_key`。
+- 路由拒绝未知的 JSON 字段。
+- 路由不允许任意的文件读写。
+- 路由不允许任意的 shell 执行。
+- 破坏性 MCP 工具标注有 `destructiveHint`。
 
-Local Network mode:
+局域网模式：
 
-- is intended only for trusted networks
-- exposes the server on `0.0.0.0`
-- still requires the bearer token
-- should be treated like any local automation endpoint with write access to benchmark state
+- 仅面向受信任的网络
+- 将服务器暴露在 `0.0.0.0`
+- 仍然要求 Bearer 令牌
+- 应像任何对基准测试状态有写权限的本地自动化端点一样对待
 
-## How To Extend The Agent Surface
+## 如何扩展 Agent 接口
 
-When a new UI feature should be agent-controllable, update HTTP and MCP together.
+当新的 UI 功能需要 Agent 可控时，应同时更新 HTTP 与 MCP。
 
-Definition of done:
+完成的定义：
 
-1. Add or reuse a controller method in `app/src/main/controller.ts`.
-2. Add shared request/response/event types in `packages/benchlocal-core/src/agent-protocol.ts` when the payload is not trivial.
-3. Add an IPC adapter only if the renderer needs a new direct operation.
-4. Add an HTTP route in `app/src/main/agent-server.ts`.
-5. Add strict JSON key validation with `assertOnlyKeys`.
-6. Add auth and redaction rules before returning data.
-7. Add or update OpenAPI output in `createOpenApiDocument`.
-8. Add or update the runtime guide in `createAgentGuide` if agents need to learn the feature.
-9. Add an MCP resource when the feature exposes durable readable state.
-10. Add an MCP tool when the feature is an action.
-11. Add MCP annotations:
-    - `readOnlyHint: true` for pure reads
-    - `destructiveHint: true` for deletes or irreversible changes
-    - `openWorldHint: true` when the tool may call external providers or start long-running benchmark work
-12. Emit or reuse a controller event so the renderer, SSE clients, and recent-event MCP polling all see the same change.
-13. Update this document.
-14. Run typecheck and a manual local API smoke test.
+1. 在 `app/src/main/controller.ts` 中添加或复用控制器方法。
+2. 当载荷不是平凡结构时，在 `packages/benchlocal-core/src/agent-protocol.ts` 中添加共享的请求/响应/事件类型。
+3. 仅当渲染进程需要新的直接操作时，才添加 IPC 适配器。
+4. 在 `app/src/main/agent-server.ts` 中添加 HTTP 路由。
+5. 用 `assertOnlyKeys` 添加严格的 JSON 键校验。
+6. 在返回数据前添加认证与脱敏规则。
+7. 在 `createOpenApiDocument` 中添加或更新 OpenAPI 输出。
+8. 如果 Agent 需要了解该功能，在 `createAgentGuide` 中添加或更新运行时指南。
+9. 当功能暴露持久可读状态时，添加 MCP 资源。
+10. 当功能是一个动作时，添加 MCP 工具。
+11. 添加 MCP 注解：
+    - `readOnlyHint: true` 用于纯读取
+    - `destructiveHint: true` 用于删除或不可逆的更改
+    - `openWorldHint: true` 当工具可能调用外部提供商或启动长时间的基准测试工作时
+12. 发出或复用控制器事件，让渲染进程、SSE 客户端和 MCP 近期事件轮询都看到相同的变更。
+13. 更新本文档。
+14. 运行 typecheck 并手动进行本地 API 冒烟测试。
 
-Do not add a UI-only feature that should be automatable without also deciding one of:
+不要添加一个本应可自动化、却仅存在于 UI 的功能而不同时决定以下之一：
 
-- expose it through HTTP and MCP now
-- explicitly mark it as UI-only in this document with a reason
+- 现在就通过 HTTP 与 MCP 暴露它
+- 在本文档中明确标记它为 UI 专属并说明原因
 
-## Event Extension Rules
+## 事件扩展规则
 
-Add new event types only when existing events cannot represent the change.
+仅当现有事件无法表达该变更时，才添加新的事件类型。
 
-Prefer:
+优先使用：
 
-- `workspace.updated` when tab/workspace state changes
-- `config.updated` when config changes
-- `models.availability.updated` when availability changes
-- `benchpack.run.event` for benchmark progress
-- `verifier.event` for verifier lifecycle
+- `workspace.updated` 当标签页/工作区状态变化时
+- `config.updated` 当配置变化时
+- `models.availability.updated` 当可用性变化时
+- `benchpack.run.event` 用于基准测试进度
+- `verifier.event` 用于验证器生命周期
 
-When adding a new event type:
+添加新事件类型时：
 
-1. Add it to `BenchLocalAgentEventType`.
-2. Define a payload type.
-3. Emit it from the controller.
-4. Broadcast it through the existing event bus.
-5. Add it to this doc.
-6. Include it in runtime guide text if agents need to react to it.
+1. 将其加入 `BenchLocalAgentEventType`。
+2. 定义载荷类型。
+3. 从控制器发出它。
+4. 通过既有事件总线广播它。
+5. 将其加入本文档。
+6. 如果 Agent 需要对它作出反应，把它写入运行时指南文本。
 
-## HTTP Route Extension Pattern
+## HTTP 路由扩展模式
 
-Use this shape in `agent-server.ts`:
+在 `agent-server.ts` 中使用如下形式：
 
 ```ts
 if (request.method === "POST" && segments.length === 3 && segments[0] === "example") {
@@ -1432,7 +1432,7 @@ if (request.method === "POST" && segments.length === 3 && segments[0] === "examp
 }
 ```
 
-For long-running commands:
+对于耗时较长的命令：
 
 ```ts
 void this.controller.longRunningOperation(input).catch((error) => {
@@ -1442,13 +1442,13 @@ void this.controller.longRunningOperation(input).catch((error) => {
 sendJson(response, 202, { accepted: true, ...handle });
 ```
 
-Use `202` when work has been accepted but not completed.
+工作已被接受但未完成时使用 `202`。
 
-Use `200` when the command completed synchronously or when there was no eligible work.
+命令同步完成或没有符合条件的工作时使用 `200`。
 
-## MCP Tool Extension Pattern
+## MCP 工具扩展模式
 
-Use this shape in `agent-mcp.ts`:
+在 `agent-mcp.ts` 中使用如下形式：
 
 ```ts
 server.registerTool(
@@ -1465,7 +1465,7 @@ server.registerTool(
 );
 ```
 
-For long-running tools, return an accepted result and rely on recent events:
+对于耗时较长的工具，返回已接受的结果并依赖近期事件：
 
 ```ts
 void controller.longRunningOperation(input).catch((error) => {
@@ -1475,39 +1475,39 @@ void controller.longRunningOperation(input).catch((error) => {
 return jsonToolResult({ accepted: true, id });
 ```
 
-## Manual Smoke Tests
+## 手动冒烟测试
 
-Use these after changing HTTP or MCP.
+修改 HTTP 或 MCP 后使用这些测试。
 
-Health:
+健康检查：
 
 ```bash
 curl "$BENCHLOCAL_AGENT_BASE_URL/v1/health"
 ```
 
-Auth failure:
+认证失败：
 
 ```bash
 curl "$BENCHLOCAL_AGENT_BASE_URL/v1/models"
 ```
 
-Expected: `401`.
+预期：`401`。
 
-List models:
+列出模型：
 
 ```bash
 curl "$BENCHLOCAL_AGENT_BASE_URL/v1/models" \
   -H "Authorization: Bearer $BENCHLOCAL_AGENT_TOKEN"
 ```
 
-SSE:
+SSE：
 
 ```bash
 curl -N "$BENCHLOCAL_AGENT_BASE_URL/v1/events" \
   -H "Authorization: Bearer $BENCHLOCAL_AGENT_TOKEN"
 ```
 
-Create tab:
+创建标签页：
 
 ```bash
 curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/workspaces/$WORKSPACE_ID/tabs" \
@@ -1516,7 +1516,7 @@ curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/v1/workspaces/$WORKSPACE_ID/tabs" \
   -d '{"benchPackId":"toolcall-15","title":"ToolCall-15"}'
 ```
 
-MCP initialize example:
+MCP initialize 示例：
 
 ```bash
 curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/mcp" \
@@ -1538,7 +1538,7 @@ curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/mcp" \
   }'
 ```
 
-MCP list tools example:
+MCP 列出工具示例：
 
 ```bash
 curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/mcp" \
@@ -1553,15 +1553,15 @@ curl -X POST "$BENCHLOCAL_AGENT_BASE_URL/mcp" \
   }'
 ```
 
-## Current Non-Goals
+## 当前的非目标
 
-BenchLocal Agent API and MCP do not currently:
+BenchLocal Agent API 与 MCP 目前不：
 
-- install or uninstall Bench Packs
-- start arbitrary local model servers
-- supervise Ollama, llama.cpp, MLX, LM Studio, Docker, or custom scripts
-- expose general file-system access
-- expose arbitrary shell execution
-- replace the desktop UI
+- 安装或卸载 Bench Pack
+- 启动任意本地模型服务器
+- 监管 Ollama、llama.cpp、MLX、LM Studio、Docker 或自定义脚本
+- 暴露通用文件系统访问
+- 暴露任意 shell 执行
+- 取代桌面 UI
 
-For local model orchestration, the agent should manage external model servers using its own environment or ask the user to start/stop them. BenchLocal should expose availability, run, resume, retry, and stop controls so that coordination remains visible in the UI.
+对于本地模型编排，Agent 应使用自己的环境管理外部模型服务器，或请用户启动/停止它们。BenchLocal 应暴露可用性、运行、继续、重试和停止控制，使协作过程在 UI 中保持可见。

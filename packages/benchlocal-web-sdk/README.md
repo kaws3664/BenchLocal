@@ -1,46 +1,46 @@
 # @benchlocal/web-sdk
 
-Browser SDK for Interactive Web Bench Packs in the BenchLocal ecosystem.
+BenchLocal 生态中用于交互式 Web Bench Pack 的浏览器 SDK。
 
-This package is part of the `github.com/stevibe/BenchLocal` project. BenchLocal is a local LLM benchmarking desktop app. The web SDK lets a hosted Bench Pack UI ask the local BenchLocal app to run inference with the user's saved providers and selected models, without exposing provider credentials to the hosted page.
+本包是 `github.com/stevibe/BenchLocal` 项目的一部分。BenchLocal 是本地 LLM 基准测试桌面应用。Web SDK 让托管的 Bench Pack UI 能够请求本地 BenchLocal 应用使用用户已保存的提供商和所选模型运行推理，而无需向托管页面暴露提供商凭据。
 
-Use this package when you are building a Bench Pack that renders as a web app instead of the standard BenchLocal result table.
+当你要构建以 Web 应用形式渲染（而不是标准 BenchLocal 结果表格）的 Bench Pack 时，请使用本包。
 
-## Install
+## 安装
 
 ```bash
 npm install @benchlocal/web-sdk
 ```
 
-`@benchlocal/web-sdk` is MIT licensed.
+`@benchlocal/web-sdk` 采用 MIT 许可证。
 
-## What This SDK Does
+## 本 SDK 的作用
 
-Interactive Web Bench Packs run in a browser surface inside the BenchLocal desktop app. The web page owns the visual benchmark experience. BenchLocal owns local state and sensitive execution:
+交互式 Web Bench Pack 运行在 BenchLocal 桌面应用内的浏览器界面中。Web 页面负责视觉化的基准测试体验。BenchLocal 负责本地状态和敏感执行：
 
-- provider credentials
-- model configuration
-- selected models for the current tab
-- chat and streaming inference
-- run state shown in the BenchLocal tab shell
-- history records and artifacts
+- 提供商凭据
+- 模型配置
+- 当前标签页所选的模型
+- 对话与流式推理
+- 显示在 BenchLocal 标签页外壳中的运行状态
+- 历史记录与产物
 
-The SDK talks to BenchLocal through a narrow `postMessage` bridge. It does not work as a general HTTP proxy and it does not expose API keys.
+SDK 通过一个窄接口的 `postMessage` 桥接层与 BenchLocal 通信。它不是通用 HTTP 代理，也不暴露 API 密钥。
 
-## When To Use It
+## 何时使用
 
-Use `@benchlocal/web-sdk` for hosted or local web benchmarks that need richer presentation than a table:
+对需要比表格更丰富呈现形式的托管或本地 Web 基准测试，请使用 `@benchlocal/web-sdk`：
 
-- form-filling benchmarks
-- browser-like task simulations
-- interactive prompt challenges
-- visual tool-use tests
-- agent workflow demos
-- benchmarks with custom progress, playback, or artifacts
+- 填表基准测试
+- 类浏览器的任务模拟
+- 交互式提示词挑战
+- 视觉化工具调用测试
+- Agent 工作流演示
+- 带自定义进度、回放或产物的基准测试
 
-For normal table-based Bench Packs, use `@benchlocal/sdk` instead.
+对于常规的表格型 Bench Pack，请改用 `@benchlocal/sdk`。
 
-## Quick Start
+## 快速开始
 
 ```ts
 import { createBenchLocalClient } from "@benchlocal/web-sdk";
@@ -50,8 +50,8 @@ const benchlocal = createBenchLocalClient();
 const environment = await benchlocal.environment.detect({ timeoutMs: 500 });
 
 if (!environment.isInsideBenchLocal) {
-  // Render a normal-browser landing state.
-  // Do not ask users for provider credentials here.
+  // 渲染普通浏览器的落地页状态。
+  // 不要在这里向用户索要提供商凭据。
 }
 
 const selected = await benchlocal.models.getSelected();
@@ -95,9 +95,9 @@ try {
 }
 ```
 
-## Runtime Detection
+## 运行时检测
 
-Web Bench Packs can also be opened in a normal browser. Use environment detection before calling bridge APIs that require BenchLocal.
+Web Bench Pack 也可能在普通浏览器中打开。在调用需要 BenchLocal 的桥接 API 之前，请先做环境检测。
 
 ```ts
 const benchlocal = createBenchLocalClient();
@@ -113,7 +113,7 @@ if (environment.isInsideBenchLocal) {
 }
 ```
 
-The detection result has this shape:
+检测结果的形状如下：
 
 ```ts
 interface BenchLocalWebEnvironmentInfo {
@@ -127,9 +127,9 @@ interface BenchLocalWebEnvironmentInfo {
 }
 ```
 
-`environment.isEmbedded` is a synchronous iframe check. `environment.detect()` confirms whether the parent frame is actually BenchLocal by making a short `capabilities` bridge request.
+`environment.isEmbedded` 是同步的 iframe 检查。`environment.detect()` 通过发起一次短超时的 `capabilities` 桥接请求，确认父框架是否真的是 BenchLocal。
 
-## Creating A Client
+## 创建客户端
 
 ```ts
 const benchlocal = createBenchLocalClient({
@@ -137,7 +137,7 @@ const benchlocal = createBenchLocalClient({
 });
 ```
 
-Options:
+选项：
 
 ```ts
 interface BenchLocalWebClientOptions {
@@ -147,15 +147,15 @@ interface BenchLocalWebClientOptions {
 }
 ```
 
-Most Bench Packs should call `createBenchLocalClient()` with no options. The default target is `window.parent`.
+大多数 Bench Pack 应以无选项方式调用 `createBenchLocalClient()`。默认目标是 `window.parent`。
 
-## Capabilities
+## 能力
 
 ```ts
 const capabilities = await benchlocal.capabilities();
 ```
 
-Returns information about the installed web pack and the permissions BenchLocal granted from the pack manifest.
+返回已安装 Web 包的信息，以及 BenchLocal 根据包清单授予的权限。
 
 ```ts
 interface BenchLocalWebCapabilities {
@@ -176,42 +176,42 @@ interface BenchLocalWebCapabilities {
 }
 ```
 
-Use `capabilities.history?.mode === "history"` to render a read-only history playback experience.
+使用 `capabilities.history?.mode === "history"` 渲染只读的历史回放体验。
 
-## Model APIs
+## 模型 API
 
-### List Available Models
+### 列出可用模型
 
 ```ts
 const { models, availability } = await benchlocal.models.list();
 ```
 
-`models.list()` returns models that BenchLocal can expose to the current web pack. Use this when your UI wants to show all allowed choices.
+`models.list()` 返回 BenchLocal 可以暴露给当前 Web 包的模型。当你的 UI 想展示所有允许的选项时使用它。
 
-### Get Selected Models
+### 获取所选模型
 
 ```ts
 const { models } = await benchlocal.models.getSelected();
 ```
 
-`models.getSelected()` returns the models selected on the current BenchLocal tab. This is the most common API for a web benchmark. If your benchmark supports one model at a time, show these models and let the user pick one inside your web UI.
+`models.getSelected()` 返回当前 BenchLocal 标签页上所选的模型。这是 Web 基准测试最常用的 API。如果你的基准测试一次支持一个模型，请展示这些模型并让用户在你的 Web UI 中选择一个。
 
-### React To Model Selection Changes
+### 响应模型选择变化
 
 ```ts
 const unsubscribe = benchlocal.models.onChanged((event) => {
   console.log("BenchLocal model selection changed", event.models);
 });
 
-// Later:
+// 之后：
 unsubscribe();
 ```
 
-BenchLocal sends this event when the user changes the tab's selected models from the desktop UI.
+当用户从桌面 UI 更改标签页所选模型时，BenchLocal 发出此事件。
 
-### Model Shape
+### 模型结构
 
-The SDK re-exports `RegisteredModel` and `ModelAvailability` from `@benchlocal/core`.
+SDK 从 `@benchlocal/core` 重新导出 `RegisteredModel` 与 `ModelAvailability`。
 
 ```ts
 interface RegisteredModel {
@@ -242,13 +242,13 @@ interface ModelAvailability {
 }
 ```
 
-Use `model.id` when calling inference APIs. Treat `model.provider` as a display name. BenchLocal does not expose provider secrets to the web page.
+调用推理 API 时使用 `model.id`。把 `model.provider` 当作显示名。BenchLocal 不向 Web 页面暴露提供商密钥。
 
-## Inference APIs
+## 推理 API
 
-Inference runs through the local BenchLocal app, using the user's configured provider and model.
+推理通过本地 BenchLocal 应用执行，使用用户配置的提供商和模型。
 
-### Non-Streaming Chat
+### 非流式对话
 
 ```ts
 const result = await benchlocal.inference.chat({
@@ -271,7 +271,7 @@ const result = await benchlocal.inference.chat({
 console.log(result.content);
 ```
 
-Request shape:
+请求形状：
 
 ```ts
 interface BenchLocalChatRequest {
@@ -284,7 +284,7 @@ interface BenchLocalChatRequest {
 }
 ```
 
-Response shape:
+响应形状：
 
 ```ts
 interface BenchLocalChatResponse {
@@ -298,7 +298,7 @@ interface BenchLocalChatResponse {
 }
 ```
 
-### Streaming Chat
+### 流式对话
 
 ```ts
 let content = "";
@@ -322,7 +322,7 @@ for await (const event of benchlocal.inference.streamChat({
 }
 ```
 
-Stream events:
+流事件：
 
 ```ts
 type BenchLocalChatStreamEvent =
@@ -342,11 +342,11 @@ type BenchLocalChatStreamEvent =
   | { type: "error"; modelId: string; message: string; code?: string; retryable?: boolean };
 ```
 
-## Run State APIs
+## 运行状态 API
 
-Interactive Web Bench Packs control their own UI, so they must tell BenchLocal when a run starts, progresses, stops, or is cancelled. BenchLocal uses this state to show tab spinners and a host-side Stop button.
+交互式 Web Bench Pack 控制自己的 UI，因此必须在运行开始、推进、停止或取消时告知 BenchLocal。BenchLocal 用这些状态显示标签页加载指示器和宿主侧的「停止」按钮。
 
-### Start A Run
+### 开始运行
 
 ```ts
 await benchlocal.runs.startState({
@@ -355,7 +355,7 @@ await benchlocal.runs.startState({
 });
 ```
 
-### Update Progress
+### 更新进度
 
 ```ts
 await benchlocal.runs.updateProgress({
@@ -368,7 +368,7 @@ await benchlocal.runs.updateProgress({
 });
 ```
 
-Progress input:
+进度输入：
 
 ```ts
 interface BenchLocalWebRunProgressInput {
@@ -379,9 +379,9 @@ interface BenchLocalWebRunProgressInput {
 }
 ```
 
-### Handle Stop Requests
+### 处理停止请求
 
-BenchLocal can ask the web app to stop. The web app owns cancellation because it owns the benchmark workflow.
+BenchLocal 可以要求 Web 应用停止。取消由 Web 应用负责，因为基准测试工作流归它所有。
 
 ```ts
 let stopped = false;
@@ -403,18 +403,18 @@ const unsubscribeStop = benchlocal.runs.onStopRequested(async (event) => {
   await benchlocal.runs.stopState({ message: "Stopped by BenchLocal." });
 });
 
-// Check this between steps, tool calls, stream chunks, or animation frames.
+// 在步骤、工具调用、流式分片或动画帧之间检查它。
 if (stopped) {
   return;
 }
 
-// Later:
+// 之后：
 unsubscribeStop();
 ```
 
-### Stop A Run
+### 停止运行
 
-Always call `stopState()` when the active run is complete, cancelled, or has errored.
+当活动运行完成、被取消或出错时，务必调用 `stopState()`。
 
 ```ts
 await benchlocal.runs.stopState({
@@ -423,11 +423,11 @@ await benchlocal.runs.stopState({
 });
 ```
 
-## History APIs
+## 历史 API
 
-History lets the web pack persist data in BenchLocal so users can revisit runs later.
+历史让 Web 包把数据持久化到 BenchLocal，用户以后可以重新查看运行。
 
-### Load History
+### 加载历史
 
 ```ts
 const history = await benchlocal.history.load<{
@@ -440,9 +440,9 @@ if (history.payload) {
 }
 ```
 
-Use this when `capabilities.history?.mode === "history"`.
+在 `capabilities.history?.mode === "history"` 时使用它。
 
-### Save History
+### 保存历史
 
 ```ts
 await benchlocal.history.save({
@@ -468,7 +468,7 @@ await benchlocal.history.save({
 });
 ```
 
-History payload:
+历史载荷：
 
 ```ts
 interface WebBenchPackHistoryPayload {
@@ -484,7 +484,7 @@ interface WebBenchPackHistoryPayload {
 }
 ```
 
-### Write Artifacts
+### 写入产物
 
 ```ts
 const artifact = await benchlocal.history.writeArtifact({
@@ -502,7 +502,7 @@ await benchlocal.history.save({
 });
 ```
 
-Artifact input:
+产物输入：
 
 ```ts
 interface BenchLocalWebArtifactWriteInput {
@@ -514,24 +514,24 @@ interface BenchLocalWebArtifactWriteInput {
 }
 ```
 
-## Permission Model
+## 权限模型
 
-The Bench Pack manifest declares which bridge permissions the hosted page needs. BenchLocal should enforce these permissions before serving bridge calls.
+Bench Pack 清单声明托管页面需要哪些桥接权限。BenchLocal 应在响应桥接调用前强制执行这些权限。
 
-Common permissions:
+常见权限：
 
-| Permission | Enables |
+| 权限 | 启用的功能 |
 | --- | --- |
 | `models:list` | `models.list()` |
-| `models:read` | `models.getSelected()` and `models.onChanged()` |
+| `models:read` | `models.getSelected()` 和 `models.onChanged()` |
 | `inference:chat` | `inference.chat()` |
 | `inference:stream` | `inference.streamChat()` |
-| `runs:write` | `runs.startState()`, `runs.updateProgress()`, `runs.stopState()`, and stop callbacks |
+| `runs:write` | `runs.startState()`、`runs.updateProgress()`、`runs.stopState()` 和停止回调 |
 | `history:read` | `history.load()` |
 | `history:write` | `history.save()` |
 | `artifacts:write` | `history.writeArtifact()` |
 
-Example web manifest section:
+Web 清单片段示例：
 
 ```json
 {
@@ -554,19 +554,19 @@ Example web manifest section:
 }
 ```
 
-## Security Notes
+## 安全注意事项
 
-- Do not ask users to paste provider API keys into your web pack.
-- Do not send provider credentials to your servers.
-- Do not rely on direct browser requests to LLM providers. CORS and credential trust are the reason this SDK exists.
-- Treat the web app as presentation and benchmark orchestration.
-- Treat BenchLocal as the local authority for provider execution, selected models, history, and artifacts.
-- If your web pack calls remote services, declare those origins in the Bench Pack data policy and explain what data is sent.
-- Store enough history metadata for users to understand and reproduce a run, but avoid storing secrets.
+- 不要让用户把提供商 API 密钥粘贴到你的 Web 包中。
+- 不要把提供商凭据发送到你的服务器。
+- 不要依赖浏览器直接请求 LLM 提供商。CORS 和凭据信任正是本 SDK 存在的原因。
+- 把 Web 应用视为呈现层和基准测试编排层。
+- 把 BenchLocal 视为提供商执行、所选模型、历史和产物的本地权威。
+- 如果你的 Web 包调用远程服务，请在 Bench Pack 数据策略中声明这些源，并说明发送了什么数据。
+- 存储足够的历史元数据，让用户能理解并复现一次运行，但避免存储密钥。
 
-## Error Handling
+## 错误处理
 
-Bridge calls reject with an `Error`. BenchLocal may attach `code` and `retryable` fields.
+桥接调用以 `Error` 拒绝。BenchLocal 可能附加 `code` 和 `retryable` 字段。
 
 ```ts
 try {
@@ -578,15 +578,15 @@ try {
 }
 ```
 
-Common cases:
+常见情况：
 
-- `BenchLocal bridge request timed out`: the page is not inside BenchLocal, the parent bridge is unavailable, or the request took longer than `requestTimeoutMs`.
-- permission error: the installed web manifest did not grant the method's permission.
-- inference error: the selected model/provider failed locally.
+- `BenchLocal bridge request timed out`：页面不在 BenchLocal 内、父级桥接不可用，或请求耗时超过 `requestTimeoutMs`。
+- 权限错误：已安装的 Web 清单没有授予该方法的权限。
+- 推理错误：所选模型/提供商在本地执行失败。
 
-## Development Workflow
+## 开发工作流
 
-During local development, point a web Bench Pack manifest at your dev server:
+本地开发时，把 Web Bench Pack 清单指向你的开发服务器：
 
 ```json
 {
@@ -611,37 +611,37 @@ During local development, point a web Bench Pack manifest at your dev server:
 }
 ```
 
-For official hosted packs, use an immutable hosted URL such as:
+对于官方托管包，请使用不可变的托管 URL，例如：
 
 ```text
 https://packs.benchlocal.com/{pack-id}/{version}/index.html
 ```
 
-This keeps web delivery patchable while BenchLocal history can still record the pack id, version, entry URL, build id, and manifest metadata used for the run.
+这使 Web 交付保持可修补，同时 BenchLocal 历史仍能记录该次运行所用的包 id、版本、入口 URL、构建 id 和清单元数据。
 
-## Versioning
+## 版本管理
 
-This package follows the BenchLocal ecosystem package version. `@benchlocal/web-sdk@0.3.0` is intended to be used with `@benchlocal/core@0.3.0`.
+本包遵循 BenchLocal 生态包的版本号。`@benchlocal/web-sdk@0.3.0` 面向与 `@benchlocal/core@0.3.0` 搭配使用。
 
-The browser bridge has its own protocol version:
+浏览器桥接有自己的协议版本：
 
 ```ts
 BENCHLOCAL_WEB_BRIDGE_VERSION === 1;
 ```
 
-Breaking changes to bridge messages should increment the bridge version.
+桥接消息的破坏性变更应递增桥接版本。
 
-## Related Packages
+## 相关包
 
-- `@benchlocal/core`: shared BenchLocal protocol and data types
-- `@benchlocal/sdk`: SDK for table/runtime Bench Packs
-- `@benchlocal/web-sdk`: browser SDK for Interactive Web Bench Packs
+- `@benchlocal/core`：共享的 BenchLocal 协议与数据类型
+- `@benchlocal/sdk`：面向表格/运行时型 Bench Pack 的 SDK
+- `@benchlocal/web-sdk`：面向交互式 Web Bench Pack 的浏览器 SDK
 
-## Repository
+## 仓库
 
-- BenchLocal monorepo: https://github.com/stevibe/BenchLocal
-- Issues: https://github.com/stevibe/BenchLocal/issues
+- BenchLocal 单仓库：https://github.com/stevibe/BenchLocal
+- 问题反馈：https://github.com/stevibe/BenchLocal/issues
 
-## License
+## 许可证
 
-MIT. Copyright (c) 2026 stevibe.
+MIT。Copyright (c) 2026 stevibe。

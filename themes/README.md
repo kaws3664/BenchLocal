@@ -1,12 +1,12 @@
-# BenchLocal Themes
+# BenchLocal 主题
 
-BenchLocal supports built-in and user-defined themes via JSON files.
+BenchLocal 通过 JSON 文件支持内置主题与用户自定义主题。
 
-User themes should be placed in:
+用户主题应放置在：
 
 `~/.benchlocal/themes/`
 
-Theme file shape:
+主题文件结构：
 
 ```json
 {
@@ -22,4 +22,4 @@ Theme file shape:
 }
 ```
 
-The easiest way to create a custom theme is to copy one of the built-in theme JSON files from this directory and modify the variable values.
+创建自定义主题最简单的方式是：复制本目录中的某个内置主题 JSON 文件，然后修改其中的变量值。

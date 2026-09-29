@@ -1,54 +1,54 @@
-# Bench Protocol v1
+# 基准协议 v1
 
-## Purpose
+## 目的
 
-Bench Protocol v1 defines the runtime contract between BenchLocal and installable Bench Packs.
+基准协议 v1（Bench Protocol v1）定义了 BenchLocal 与可安装 Bench Pack 之间的运行时契约。
 
-It covers:
+它涵盖：
 
-- Bench Pack metadata
-- the runtime entrypoint
-- scenario metadata
-- host context
-- generation settings
-- verifier endpoints
-- progress events
-- scenario results
+- Bench Pack 元数据
+- 运行时入口
+- 场景元数据
+- 宿主上下文
+- 生成设置
+- 验证器端点
+- 进度事件
+- 场景结果
 
-## Core design rules
+## 核心设计规则
 
-- BenchLocal owns the shared desktop runtime
-- Bench Packs own benchmark-specific behavior
-- metadata is static and file-based
-- runtime behavior is explicit and deterministic
-- verifier dependencies are declared, not hardcoded
+- BenchLocal 负责共享的桌面运行时
+- Bench Pack 负责基准测试特有的行为
+- 元数据是静态的、基于文件的
+- 运行时行为是显式且确定的
+- 验证器依赖通过声明表达，而不是硬编码
 
-## Install artifact
+## 安装产物
 
-Each Bench Pack artifact must expose:
+每个 Bench Pack 产物必须暴露：
 
 ```text
 benchlocal.pack.json
 dist/benchlocal/index.js
 ```
 
-Optional runtime content:
+可选的运行时内容：
 
 - `verification/`
 - `README.md`
 - `METHODOLOGY.md`
 
-## Manifest
+## 清单
 
-File name:
+文件名：
 
 ```text
 benchlocal.pack.json
 ```
 
-This file is the canonical Bench Pack metadata source.
+该文件是 Bench Pack 元数据的规范来源。
 
-Representative shape:
+代表性结构：
 
 ```json
 {
@@ -91,7 +91,7 @@ Representative shape:
 }
 ```
 
-Important fields:
+重要字段：
 
 - `id`
 - `name`
@@ -99,7 +99,7 @@ Important fields:
 - `entry`
 - `capabilities`
 
-Common optional fields:
+常见可选字段：
 
 - `author`
 - `description`
@@ -109,20 +109,20 @@ Common optional fields:
 - `samplingDefaults`
 - `verifiers`
 
-Compatibility requirements are optional and are enforced by the BenchLocal client at install, inspect, and run time.
+兼容性要求是可选的，由 BenchLocal 客户端在安装、检查和运行时强制执行。
 
-Supported requirement fields:
+支持的 requirements 字段：
 
 - `requirements.benchlocal.minVersion`
-  - minimum BenchLocal client version required
+  - 要求的最低 BenchLocal 客户端版本
 - `requirements.benchlocal.maxVersionExclusive`
-  - exclusive upper bound for BenchLocal client version
+  - BenchLocal 客户端版本的排他上界
 - `requirements.hostFeatures`
-  - optional host feature flags required by the pack
+  - 包所需的可选宿主功能标志
 
-## Runtime entrypoint
+## 运行时入口
 
-BenchLocal loads `dist/benchlocal/index.js` and expects a default export with this shape:
+BenchLocal 加载 `dist/benchlocal/index.js`，并期望默认导出具有如下形状：
 
 ```ts
 export interface BenchPackRuntime {
@@ -138,13 +138,13 @@ export interface PreparedBenchPack {
 }
 ```
 
-`prepare(context)` is the point where the pack receives the resolved host state for a run session.
+`prepare(context)` 是包为一次运行会话接收已解析宿主状态的时点。
 
-## Scenario metadata
+## 场景元数据
 
-`listScenarios()` returns the UI-visible metadata for each scenario.
+`listScenarios()` 返回每个场景的 UI 可见元数据。
 
-Important fields:
+重要字段：
 
 - `id`
 - `title`
@@ -152,51 +152,51 @@ Important fields:
 - `description`
 - `detailCards`
 
-`detailCards` power the structured scenario cards shown in the desktop UI, such as:
+`detailCards` 支撑桌面 UI 中展示的结构化场景卡片，例如：
 
 - `What this tests`
 - `Success case`
 - `Failure case`
 
-## Host context
+## 宿主上下文
 
-BenchLocal provides a `HostContext` to `prepare(context)`.
+BenchLocal 为 `prepare(context)` 提供 `HostContext`。
 
-Key fields:
+关键字段：
 
 - `benchPack`
-  - install and storage paths
+  - 安装与存储路径
 - `providers`
-  - resolved provider registry
+  - 已解析的提供商注册表
 - `models`
-  - shared registered models
+  - 共享的已注册模型
 - `secrets`
-  - resolved provider secrets from config or environment
+  - 从配置或环境解析出的提供商密钥
 - `verifiers`
-  - resolved verifier endpoints and status
+  - 已解析的验证器端点与状态
 - `inferenceEndpoints`
-  - optional host-owned OpenAI-compatible model endpoints for selected Bench Packs
+  - 可选的宿主自有 OpenAI 兼容模型端点（面向选定的 Bench Pack）
 - `logger`
-  - host logging bridge
+  - 宿主日志桥接
 
-Bench Packs should usually use the helpers from `@benchlocal/sdk` instead of reading the raw context manually.
+Bench Pack 通常应使用 `@benchlocal/sdk` 提供的辅助函数，而不是手动读取原始上下文。
 
-`inferenceEndpoints` is additive and optional. Existing packs can continue using direct provider/model access. Packs that need a host-managed model transport can use the inference endpoint helpers from `@benchlocal/sdk`.
+`inferenceEndpoints` 是增量的、可选的。现有包可以继续使用直接的提供商/模型访问。需要宿主管理的模型传输的包可以使用 `@benchlocal/sdk` 的推理端点辅助函数。
 
-Running inference endpoints expose:
+运行中的推理端点暴露：
 
 - `baseUrl`
-  - host-reachable URL for the Bench Pack runtime
+  - Bench Pack 运行时可访问的宿主侧 URL
 - `dockerBaseUrl`
-  - optional container-reachable URL for Docker verifiers
+  - 可选的、Docker 验证器容器内可访问的 URL
 - `apiKey`
-  - ephemeral BenchLocal-issued bearer token when auth is required
+  - 需要认证时由 BenchLocal 签发的临时 Bearer 令牌
 - `exposedModel`
-  - stable model identifier the pack should send to the endpoint
+  - 包应发送给端点的稳定模型标识符
 
-## Generation settings
+## 生成设置
 
-Per-scenario generation settings arrive as:
+每个场景的生成设置以如下形式到达：
 
 ```ts
 type GenerationRequest = {
@@ -210,25 +210,25 @@ type GenerationRequest = {
 };
 ```
 
-Behavior:
+行为：
 
-- if a field is present, the pack may forward it to the provider client
-- if a field is omitted by the pack and the user, BenchLocal omits it unless that field has an explicit BenchLocal default
-- omitted sampling fields are not sent by BenchLocal, so the inference backend uses whatever defaults it was started or configured with
-- BenchLocal currently applies only `request_timeout_seconds: 300` unless the pack or user overrides it
-- the per-test run count is a BenchLocal host control, not a generation setting, and is not forwarded to providers
+- 如果字段存在，包可以将其转发给提供商客户端
+- 如果包和用户都省略了某个字段，BenchLocal 会省略它，除非该字段有显式的 BenchLocal 默认值
+- 被省略的采样字段不会由 BenchLocal 发送，推理后端会使用其启动或配置时的默认值
+- 除非包或用户覆盖，BenchLocal 目前只应用 `request_timeout_seconds: 300`
+- 每个测试的运行次数是 BenchLocal 的宿主控制项，不是生成设置，不会转发给提供商
 
-This allows:
+这允许：
 
-- pack-level defaults from `benchlocal.pack.json`
-- per-tab user overrides from BenchLocal
-- omission of unsupported or unnecessary values
+- 来自 `benchlocal.pack.json` 的包级默认值
+- 来自 BenchLocal 的每标签页用户覆盖
+- 省略不受支持或不必要的值
 
-## Progress events
+## 进度事件
 
-Bench Packs emit deterministic progress events through `emit`.
+Bench Pack 通过 `emit` 发出确定性的进度事件。
 
-Current event types:
+当前事件类型：
 
 - `run_started`
 - `scenario_started`
@@ -238,13 +238,13 @@ Current event types:
 - `run_finished`
 - `run_error`
 
-BenchLocal stores these events for detached logs, status UI, and run history.
+BenchLocal 会存储这些事件，用于独立日志窗口、状态 UI 和运行历史。
 
-## Scenario result
+## 场景结果
 
-Each `runScenario(...)` call returns a `ScenarioResult`.
+每次 `runScenario(...)` 调用返回一个 `ScenarioResult`。
 
-Representative shape:
+代表性结构：
 
 ```ts
 type ScenarioResult = {
@@ -266,11 +266,11 @@ type ScenarioResult = {
 };
 ```
 
-## Benchmark score
+## 基准得分
 
-After a run completes, BenchLocal asks the pack to aggregate model-level results into a `BenchmarkScore`.
+运行完成后，BenchLocal 会让包把模型级结果聚合成 `BenchmarkScore`。
 
-Representative shape:
+代表性结构：
 
 ```ts
 type BenchmarkScore = {
@@ -285,33 +285,33 @@ type BenchmarkScore = {
 };
 ```
 
-## Verifiers
+## 验证器
 
-Verifier-dependent Bench Packs declare their verifier requirements in the manifest.
+依赖验证器的 Bench Pack 在清单中声明其验证器需求。
 
-BenchLocal owns:
+BenchLocal 负责：
 
-- verifier mode selection
-- Docker lifecycle
-- dynamic host port assignment
-- health checks
-- status reporting
+- 验证器模式选择
+- Docker 生命周期
+- 动态分配宿主端口
+- 健康检查
+- 状态报告
 
-Bench Packs own:
+Bench Pack 负责：
 
-- verifier implementation
-- verifier request and response contract
-- use of the resolved verifier URL
+- 验证器实现
+- 验证器请求与响应契约
+- 使用解析出的验证器 URL
 
-`listenPort` is the internal verifier port inside the container. BenchLocal assigns the host port automatically.
+`listenPort` 是容器内部验证器的端口。BenchLocal 自动分配宿主端口。
 
-## Compatibility note
+## 兼容性说明
 
-The codebase still carries a few `sidecar` aliases for backward compatibility.
+代码库中仍保留少量 `sidecar` 别名以保持向后兼容。
 
-Public protocol terminology should use:
+公共协议术语应使用：
 
 - `verifier`
 - `verifiers`
 
-not `sidecar`.
+而不是 `sidecar`。
