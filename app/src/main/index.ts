@@ -1,4 +1,5 @@
 import { app, BrowserWindow, Menu, nativeTheme, screen, type MenuItemConstructorOptions } from "electron";
+import { setProcessLocale, tProcess as t } from "@/shared/i18n";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { getBenchLocalHome, loadOrCreateConfig } from "@core";
@@ -154,12 +155,12 @@ function buildApplicationMenu(appName: string): void {
         { role: "about" },
         { type: "separator" },
         {
-          label: "设置",
+          label: t("设置"),
           accelerator: "CmdOrCtrl+,",
           click: openSettings
         },
         {
-          label: "检查更新…",
+          label: t("检查更新…"),
           click: checkForUpdates
         },
         { role: "services" },
@@ -169,23 +170,23 @@ function buildApplicationMenu(appName: string): void {
         { role: "unhide" },
         { type: "separator" },
         {
-          label: `退出 ${appName}`,
+          label: t("退出 {0}", appName),
           accelerator: "Cmd+Q",
           click: requestAppQuit
         }
       ]
     : [
         {
-          label: `关于 ${appName}`,
+          label: t("关于 {0}", appName),
           click: openAbout
         },
         {
-          label: "设置",
+          label: t("设置"),
           accelerator: "CmdOrCtrl+,",
           click: openSettings
         },
         {
-          label: "检查更新…",
+          label: t("检查更新…"),
           click: checkForUpdates
         },
         ...(isDev
@@ -196,7 +197,7 @@ function buildApplicationMenu(appName: string): void {
           : []),
         { type: "separator" },
         {
-          label: "退出",
+          label: t("退出"),
           accelerator: "CmdOrCtrl+Q",
           click: requestAppQuit
         }
@@ -210,7 +211,7 @@ function buildApplicationMenu(appName: string): void {
       submenu: appSubmenu
     },
     {
-      label: "编辑",
+      label: t("编辑"),
       submenu: [
         { role: "undo" },
         { role: "redo" },
@@ -224,7 +225,7 @@ function buildApplicationMenu(appName: string): void {
     ...(isMac
       ? [
           {
-            label: "视图",
+            label: t("视图"),
             submenu: [
               ...(isDev ? [{ role: "reload" as const }, { role: "forceReload" as const }, { role: "toggleDevTools" as const }, { type: "separator" as const }] : []),
               { role: "resetZoom" as const },
@@ -237,7 +238,7 @@ function buildApplicationMenu(appName: string): void {
         ]
       : []),
     {
-      label: "窗口",
+      label: t("窗口"),
       submenu: windowSubmenu
     }
   ];
@@ -247,6 +248,7 @@ function buildApplicationMenu(appName: string): void {
 
 async function createMainWindow(): Promise<void> {
   const loadState = await loadOrCreateConfig();
+  setProcessLocale(loadState.config.ui.language);
   const savedWindowState = await loadPersistedWindowState();
   const initialBounds = resolveInitialWindowBounds(savedWindowState);
   const effectiveThemeId =
@@ -371,9 +373,15 @@ app.whenReady().then(async () => {
     applicationVersion: appMetadata.version,
     ...(appMetadata.copyright ? { copyright: appMetadata.copyright } : {})
   });
-  registerIpcHandlers();
+  registerIpcHandlers({
+    onConfigSaved: () => {
+      buildApplicationMenu(appMetadata.productName);
+    }
+  });
   await agentServer.initialize();
   initializeAppUpdater();
+  const initialConfigState = await loadOrCreateConfig();
+  setProcessLocale(initialConfigState.config.ui.language);
   buildApplicationMenu(appMetadata.productName);
   await createMainWindow();
 

@@ -1,4 +1,5 @@
 import { promises as fs } from "node:fs";
+import { setProcessLocale, tProcess as t } from "@/shared/i18n";
 import { BrowserWindow, dialog, ipcMain } from "electron";
 import type {
   BenchLocalAgentEvent,
@@ -111,7 +112,7 @@ function forwardControllerEvent(event: BenchLocalAgentEvent): void {
   }
 }
 
-export function registerIpcHandlers(): void {
+export function registerIpcHandlers(hooks?: { onConfigSaved?: () => void }): void {
   const preloadPath = new URL("../preload/index.js", import.meta.url).pathname;
   benchLocalController.onAgentEvent(forwardControllerEvent);
 
@@ -120,7 +121,10 @@ export function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(CONFIG_SAVE_CHANNEL, async (_event, config: BenchLocalConfig) => {
-    return benchLocalController.saveConfig(config);
+    const saved = await benchLocalController.saveConfig(config);
+    setProcessLocale(config.ui.language);
+    hooks?.onConfigSaved?.();
+    return saved;
   });
 
   ipcMain.handle(APP_METADATA_CHANNEL, async () => {
@@ -176,7 +180,7 @@ export function registerIpcHandlers(): void {
       const workspace = input.state.workspaces[input.workspaceId];
 
       if (!workspace) {
-        throw new Error(`未找到工作区 "${input.workspaceId}"。`);
+        throw new Error(t("未找到工作区 \"{0}\"。", input.workspaceId));
       }
 
       const tabs = Object.fromEntries(
@@ -187,9 +191,9 @@ export function registerIpcHandlers(): void {
       );
 
       const result = await dialog.showSaveDialog({
-        title: "导出工作区",
+        title: t("导出工作区"),
         defaultPath: `${workspace.name.replace(/[^\w.-]+/g, "-").toLowerCase() || "workspace"}.benchlocal-workspace.json`,
-        filters: [{ name: "BenchLocal 工作区", extensions: ["json"] }]
+        filters: [{ name: t("BenchLocal 工作区"), extensions: ["json"] }]
       });
 
       if (result.canceled || !result.filePath) {
@@ -217,9 +221,9 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(WORKSPACES_IMPORT_CHANNEL, async () => {
     const result = await dialog.showOpenDialog({
-      title: "导入工作区",
+      title: t("导入工作区"),
       properties: ["openFile"],
-      filters: [{ name: "BenchLocal 工作区", extensions: ["json"] }]
+      filters: [{ name: t("BenchLocal 工作区"), extensions: ["json"] }]
     });
 
     if (result.canceled || result.filePaths.length === 0) {
@@ -233,7 +237,7 @@ export function registerIpcHandlers(): void {
     };
 
     if (!parsed.workspace || !parsed.tabs) {
-      throw new Error("导入的工作区文件缺少工作区或标签页数据。");
+      throw new Error(t("导入的工作区文件缺少工作区或标签页数据。"));
     }
 
     return {

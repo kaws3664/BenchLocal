@@ -1,4 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { setLocale, t, useLocale, type BenchLocalLocale } from "./i18n";
+import { SUPPORTED_LOCALES } from "@/shared/i18n";
 import benchlocalIcon from "../../../assets/benchlocal-icon.png";
 import benchlocalIconOutline from "../../../assets/benchlocal-icon-outline.png";
 import shareCardDisplayFontUrl from "./assets/fonts/InterVariable.woff2";
@@ -84,7 +86,7 @@ const ShareResultsStudio = lazy(async () => {
 
 function describeAppUpdateState(state: BenchLocalUpdateState | null): string {
   if (!state) {
-    return "更新器正在初始化。";
+    return t("更新器正在初始化。");
   }
 
   if (state.message?.trim()) {
@@ -93,27 +95,27 @@ function describeAppUpdateState(state: BenchLocalUpdateState | null): string {
 
   switch (state.status) {
     case "unsupported":
-      return "当前 BenchLocal 构建不支持自更新。";
+      return t("当前 BenchLocal 构建不支持自更新。");
     case "checking":
-      return "正在检查 BenchLocal 更新。";
+      return t("正在检查 BenchLocal 更新。");
     case "available":
       return state.availableVersion
-        ? `BenchLocal ${state.availableVersion} 已发布，正在下载更新。`
-        : "发现 BenchLocal 更新，正在下载。";
+        ? t("BenchLocal {0} 已发布，正在下载更新。", state.availableVersion)
+        : t("发现 BenchLocal 更新，正在下载。");
     case "downloading":
       return state.availableVersion
-        ? `正在下载 BenchLocal ${state.availableVersion}。`
-        : "正在下载 BenchLocal 更新。";
+        ? t("正在下载 BenchLocal {0}。", state.availableVersion)
+        : t("正在下载 BenchLocal 更新。");
     case "downloaded":
       return state.downloadedVersion
-        ? `BenchLocal ${state.downloadedVersion} 已准备好安装。`
-        : "BenchLocal 更新已准备好安装。";
+        ? t("BenchLocal {0} 已准备好安装。", state.downloadedVersion)
+        : t("BenchLocal 更新已准备好安装。");
     case "not_available":
-      return "BenchLocal 已是最新版本。";
+      return t("BenchLocal 已是最新版本。");
     case "error":
-      return "BenchLocal 无法完成更新请求。";
+      return t("BenchLocal 无法完成更新请求。");
     default:
-      return "BenchLocal 可以检查更新。";
+      return t("BenchLocal 可以检查更新。");
   }
 }
 
@@ -136,7 +138,7 @@ function formatDurationMs(durationMs?: number): string | null {
   }
 
   if (durationMs < 1000) {
-    return `${Math.max(0, Math.round(durationMs))} 毫秒`;
+    return t("{0} 毫秒", Math.max(0, Math.round(durationMs)));
   }
 
   if (durationMs < 60_000) {
@@ -445,7 +447,7 @@ function isAbortLikeError(error: unknown): boolean {
 
 function resolveThemeLabel(themeId: string, themes: BenchLocalThemeDescriptor[], prefersDark: boolean): string {
   if (themeId === "system") {
-    return `系统（${prefersDark ? "深色" : "浅色"}）`;
+    return t("系统（{0}）", prefersDark ? t("深色") : t("浅色"));
   }
 
   return themes.find((theme) => theme.id === themeId)?.name ?? themeId;
@@ -536,7 +538,7 @@ function reapplyPendingFilesystemDraft(
 }
 
 function providerKindLabel(kind: BenchLocalProviderKind): string {
-  return PROVIDER_KIND_OPTIONS.find((option) => option.value === kind)?.label ?? kind;
+  return t(PROVIDER_KIND_OPTIONS.find((option) => option.value === kind)?.label ?? kind);
 }
 
 function defaultProviderName(kind: BenchLocalProviderKind): string {
@@ -547,7 +549,7 @@ function fallbackProviderDisplayName(providerId: string): string {
   const trimmed = providerId.trim();
 
   if (/^openai[_-]compatible-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)) {
-    return "OpenAI 兼容";
+    return t("OpenAI 兼容");
   }
 
   switch (trimmed) {
@@ -566,7 +568,7 @@ function fallbackProviderDisplayName(providerId: string): string {
     case "pico":
       return "Pico";
     default:
-      return trimmed || "未知提供商";
+      return trimmed || t("未知提供商");
   }
 }
 
@@ -602,7 +604,7 @@ function formatShareDate(value: string): string {
   const date = new Date(value);
 
   if (Number.isNaN(date.valueOf())) {
-    return "未知日期";
+    return t("未知日期");
   }
 
   return new Intl.DateTimeFormat(undefined, {
@@ -618,7 +620,7 @@ function formatCompactHistoryDate(value: string): string {
   const date = new Date(value);
 
   if (Number.isNaN(date.valueOf())) {
-    return "已保存的运行";
+    return t("已保存的运行");
   }
 
   return new Intl.DateTimeFormat(undefined, {
@@ -663,18 +665,18 @@ function countShareStatuses(results: ScenarioResult[], scenarioCount: number): S
 
 function describeShareOutcome(counts: ShareCardStatusCounts, scenarioCount: number): string {
   if (scenarioCount > 0 && counts.pass === scenarioCount) {
-    return "全部通过";
+    return t("全部通过");
   }
 
   if (counts.fail > 0) {
-    return `${counts.fail} 项失败`;
+    return t("{0} 项失败", counts.fail);
   }
 
   if (counts.partial > 0) {
-    return `${counts.partial} 项部分通过`;
+    return t("{0} 项部分通过", counts.partial);
   }
 
-  return "已完成";
+  return t("已完成");
 }
 
 function buildResultShareCardData({
@@ -694,7 +696,7 @@ function buildResultShareCardData({
   const results = runSummary.resultsByModel[modelId] ?? [];
   const scenarioCount = runSummary.scenarioCount;
   const statusCounts = countShareStatuses(results, scenarioCount);
-  const providerName = model ? getProviderDisplayName(providers, model.provider) : "未知提供商";
+  const providerName = model ? getProviderDisplayName(providers, model.provider) : t("未知提供商");
   const modelIdentifier = model ? getModelDisplayIdentifier(model) : modelId;
   const startedAt = new Date(runSummary.startedAt);
   const completedAt = new Date(runSummary.completedAt);
@@ -1087,9 +1089,9 @@ function drawShareCardCanvas(
   ctx.textAlign = "left";
 
   const segments = [
-    { label: "通过", count: data.statusCounts.pass, color: palette.pass },
-    { label: "部分", count: data.statusCounts.partial, color: palette.partial },
-    { label: "失败", count: data.statusCounts.fail, color: palette.fail }
+    { label: t("通过"), count: data.statusCounts.pass, color: palette.pass },
+    { label: t("部分"), count: data.statusCounts.partial, color: palette.partial },
+    { label: t("失败"), count: data.statusCounts.fail, color: palette.fail }
   ];
   const barX = 480;
   const barY = 356;
@@ -1179,7 +1181,7 @@ function drawShareCardCanvas(
 
     if (visibleCategoryCount < data.categories.length) {
       categoryChips.push({
-        label: `+${data.categories.length - visibleCategoryCount} 更多`,
+        label: t("+{0} 更多", data.categories.length - visibleCategoryCount),
         overflow: true
       });
     }
@@ -1204,9 +1206,9 @@ function drawShareCardCanvas(
   ctx.fillStyle = palette.muted;
   const meta = [
     data.runModeLabel,
-    `${data.runsPerTest} 次运行`,
+    t("{0} 次运行", data.runsPerTest),
     data.runDateLabel,
-    data.durationLabel ? `共 ${data.durationLabel}` : null
+    data.durationLabel ? t("共 {0}", data.durationLabel) : null
   ].filter(Boolean).join(" · ");
   ctx.textBaseline = "middle";
   ctx.fillText(truncateCanvasText(ctx, meta, 760), 78, 570);
@@ -1227,7 +1229,7 @@ async function createShareCardBlob(data: ResultShareCardData): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (!blob) {
-        reject(new Error("无法渲染分享卡片。"));
+        reject(new Error(t("无法渲染分享卡片。")));
         return;
       }
 
@@ -1248,11 +1250,11 @@ function defaultProviderApiKeyPlaceholder(kind: BenchLocalProviderKind): string 
 function benchPackMutationLabel(mutation: BenchPackMutationState): string {
   switch (mutation.action) {
     case "install":
-      return mutation.phase === "complete" ? "已安装" : "安装中...";
+      return mutation.phase === "complete" ? t("已安装") : t("安装中...");
     case "update":
-      return mutation.phase === "complete" ? "已更新" : "更新中...";
+      return mutation.phase === "complete" ? t("已更新") : t("更新中...");
     case "uninstall":
-      return mutation.phase === "complete" ? "已移除" : "移除中...";
+      return mutation.phase === "complete" ? t("已移除") : t("移除中...");
     default:
       return mutation.message;
   }
@@ -1345,11 +1347,11 @@ function parseSamplingForm(form: SamplingFormState): { value?: GenerationRequest
     const parsed = field.integer ? Number.parseInt(rawValue, 10) : Number(rawValue);
 
     if (!Number.isFinite(parsed)) {
-      return { error: `${field.label} 必须是有效数字。` };
+      return { error: t("{0} 必须是有效数字。", t(field.label)) };
     }
 
     if (field.integer && parsed <= 0) {
-      return { error: `${field.label} 必须大于零。` };
+      return { error: t("{0} 必须大于零。", t(field.label)) };
     }
 
     result[field.key] = parsed;
@@ -1423,7 +1425,7 @@ function buildModelConfig(
 }
 
 function createCopyLabel(label: string, existingLabels: string[]): string {
-  const base = `${label.trim() || "未命名"} 副本`;
+  const base = t("{0} 副本", label.trim() || t("未命名"));
   const existing = new Set(existingLabels.map((candidate) => candidate.trim()));
 
   if (!existing.has(base)) {
@@ -1466,7 +1468,7 @@ function createUniqueModelId(model: BenchLocalModelConfig, models: BenchLocalMod
 }
 
 function createWorkspaceName(existingCount: number): string {
-  return existingCount === 0 ? "我的工作区" : `工作区 ${existingCount + 1}`;
+  return existingCount === 0 ? t("我的工作区") : t("工作区 {0}", existingCount + 1);
 }
 
 function createTabTitle(benchPackId: string, inspections: BenchPackInspection[]): string {
@@ -1643,7 +1645,7 @@ function SettingsTableShell({
 
   return (
     <div className={wrapClassName}>
-      <div ref={viewportRef} className="settings-table-scroll" role="region" aria-label="可滚动的设置表格" tabIndex={0}>
+      <div ref={viewportRef} className="settings-table-scroll" role="region" aria-label={t("可滚动的设置表格")} tabIndex={0}>
         {children}
       </div>
       {hasHorizontalOverflow ? (
@@ -1996,7 +1998,7 @@ function isRunCancellationMessage(message: string | undefined): boolean {
 }
 
 const REGISTRY_UNAVAILABLE_MESSAGE =
-  "官方基准包注册表当前不可用。已安装的基准包仍可使用。";
+  t("官方基准包注册表当前不可用。已安装的基准包仍可使用。");
 
 function formatDesktopErrorMessage(error: unknown): string {
   if (!(error instanceof Error)) {
@@ -2031,10 +2033,10 @@ function formatRegistryMutationError(
   error: unknown
 ): string {
   if (isRegistryConnectivityError(error)) {
-    return `无法${action === "install" ? "安装" : "更新"} ${benchPackId}。官方基准包注册表当前不可用。`;
+    return t("无法{0} {1}。官方基准包注册表当前不可用。", action === "install" ? t("安装~verb") : t("更新~verb"), benchPackId);
   }
 
-  return formatDesktopErrorMessage(error) || `无法${action === "install" ? "安装" : "更新"} ${benchPackId}。`;
+  return formatDesktopErrorMessage(error) || t("无法{0} {1}。", action === "install" ? t("安装~verb") : t("更新~verb"), benchPackId);
 }
 
 function getRequiredVerifierRunBlocker(
@@ -2050,17 +2052,17 @@ function getRequiredVerifierRunBlocker(
 
   if (verifierStatus?.docker.state === "not_installed") {
     return {
-      title: "需要 Docker",
-      message: "该基准包需要本地验证器运行时。请先安装 Docker Desktop 再开始测试运行。",
-      actionLabel: "打开验证设置"
+      title: t("需要 Docker"),
+      message: t("该基准包需要本地验证器运行时。请先安装 Docker Desktop 再开始测试运行。"),
+      actionLabel: t("打开验证设置")
     };
   }
 
   if (verifierStatus?.docker.state === "not_running") {
     return {
-      title: "Docker 未运行",
-      message: "该基准包需要本地验证器运行时。请启动 Docker Desktop 后重新运行。",
-      actionLabel: "打开验证设置"
+      title: t("Docker 未运行"),
+      message: t("该基准包需要本地验证器运行时。请启动 Docker Desktop 后重新运行。"),
+      actionLabel: t("打开验证设置")
     };
   }
 
@@ -2070,25 +2072,25 @@ function getRequiredVerifierRunBlocker(
 
     if ((runtimeConfig?.mode ?? spec.defaultMode) === "docker" && runtimeConfig?.auto_start === false && runtimeStatus?.status !== "running") {
       return {
-        title: "验证器未启动",
-        message: "该必需验证器的自动启动已禁用。请先在验证设置中启动它，再运行基准包。",
-        actionLabel: "打开验证设置"
+        title: t("验证器未启动"),
+        message: t("该必需验证器的自动启动已禁用。请先在验证设置中启动它，再运行基准包。"),
+        actionLabel: t("打开验证设置")
       };
     }
 
     if (runtimeStatus?.status === "missing_dependency") {
       return {
-        title: "需要 Docker",
-        message: runtimeStatus.details ?? "该基准包需要本地 Docker 才能运行。",
-        actionLabel: "打开验证设置"
+        title: t("需要 Docker"),
+        message: runtimeStatus.details ?? t("该基准包需要本地 Docker 才能运行。"),
+        actionLabel: t("打开验证设置")
       };
     }
 
     if (runtimeStatus?.status === "dependency_not_running") {
       return {
-        title: "Docker 未运行",
-        message: runtimeStatus.details ?? "该基准包需要本地 Docker 处于运行状态才能运行。",
-        actionLabel: "打开验证设置"
+        title: t("Docker 未运行"),
+        message: runtimeStatus.details ?? t("该基准包需要本地 Docker 处于运行状态才能运行。"),
+        actionLabel: t("打开验证设置")
       };
     }
   }
@@ -2113,31 +2115,31 @@ function getVerifierStatusTone(status: BenchPackVerifierStatus["verifiers"][numb
 function formatVerifierRuntimeStatus(status: BenchPackVerifierStatus["verifiers"][number]["status"] | undefined): string {
   switch (status) {
     case "missing_dependency":
-      return "需要 Docker";
+      return t("需要 Docker");
     case "dependency_not_running":
-      return "Docker 未运行";
+      return t("Docker 未运行");
     case "running":
-      return "运行中";
+      return t("运行中");
     case "failed":
-      return "失败";
+      return t("失败~verifier");
     case "stopped":
     default:
-      return "已停止";
+      return t("已停止");
   }
 }
 
 function resultStatusLabel(status: string): string {
   switch (status) {
     case "pass":
-      return "通过";
+      return t("通过");
     case "partial":
-      return "部分";
+      return t("部分");
     case "fail":
-      return "失败";
+      return t("失败");
     case "error":
-      return "错误";
+      return t("错误");
     case "missing":
-      return "缺失";
+      return t("缺失");
     default:
       return status;
   }
@@ -2160,7 +2162,7 @@ function getModelAvailabilityView(
     modelId: model.id,
     providerId: model.provider,
     status: "unknown",
-    details: "尚未检查可用性。"
+    details: t("尚未检查可用性。")
   };
 }
 
@@ -2181,14 +2183,14 @@ function modelAvailabilityChipClass(availability: ModelAvailabilityView): string
 function modelAvailabilityLabel(availability: ModelAvailabilityView): string {
   switch (availability.status) {
     case "online":
-      return "在线";
+      return t("在线");
     case "offline":
-      return "离线";
+      return t("离线");
     case "checking":
-      return "检查中";
+      return t("检查中");
     case "unknown":
     default:
-      return "未知";
+      return t("未知~chip");
   }
 }
 
@@ -2276,11 +2278,12 @@ export function App() {
   const activeToastKeysRef = useRef(new Set<string>());
   const toastKeysByIdRef = useRef(new Map<string, string>());
 
+  const locale = useLocale();
   const providerIds = useMemo(() => Object.keys(draft?.providers ?? {}), [draft]);
   const themeOptions = useMemo(() => ["system", ...availableThemes.map((theme) => theme.id)], [availableThemes]);
   const currentThemeLabel = useMemo(
     () => resolveThemeLabel(draft?.ui.theme ?? "system", availableThemes, systemPrefersDark),
-    [draft?.ui.theme, availableThemes, systemPrefersDark]
+    [draft?.ui.theme, availableThemes, systemPrefersDark, locale]
   );
   const readyInspections = useMemo(() => benchPackInspections.filter((inspection) => inspection.status === "ready"), [benchPackInspections]);
   const activeWorkspace = useMemo<BenchLocalWorkspace | null>(
@@ -2426,7 +2429,7 @@ export function App() {
       const saved = await window.benchlocal.workspaces.save(nextState);
       setWorkspaceState(saved.state);
     } catch (workspaceError) {
-      setError(workspaceError instanceof Error ? workspaceError.message : "保存工作区状态失败。");
+      setError(workspaceError instanceof Error ? workspaceError.message : t("保存工作区状态失败。"));
     }
   };
 
@@ -2447,7 +2450,7 @@ export function App() {
       const inspections = await window.benchlocal.benchPacks.list();
       setBenchPackInspections(inspections);
     } catch (pluginError) {
-      setError(pluginError instanceof Error ? pluginError.message : "检查已配置的基准包失败。");
+      setError(pluginError instanceof Error ? pluginError.message : t("检查已配置的基准包失败。"));
     }
   };
 
@@ -2466,7 +2469,7 @@ export function App() {
       const statuses = await window.benchlocal.verifiers.list();
       setVerifierStatuses(Object.fromEntries(statuses.map((status) => [status.benchPackId, status])));
     } catch (verifierError) {
-      setError(verifierError instanceof Error ? verifierError.message : "加载验证器状态失败。");
+      setError(verifierError instanceof Error ? verifierError.message : t("加载验证器状态失败。"));
     }
   };
 
@@ -2475,7 +2478,7 @@ export function App() {
       const themes = await window.benchlocal.themes.list();
       setAvailableThemes(themes);
     } catch (themeError) {
-      setError(themeError instanceof Error ? themeError.message : "加载可用主题失败。");
+      setError(themeError instanceof Error ? themeError.message : t("加载可用主题失败。"));
     }
   };
 
@@ -2484,7 +2487,7 @@ export function App() {
       const nextState = await window.benchlocal.updates.check();
       setAppUpdateState(nextState);
     } catch (updateError) {
-      setError(formatDesktopErrorMessage(updateError) || "检查 BenchLocal 更新失败。");
+      setError(formatDesktopErrorMessage(updateError) || t("检查 BenchLocal 更新失败。"));
     }
   };
 
@@ -2492,7 +2495,7 @@ export function App() {
     try {
       await window.benchlocal.updates.install();
     } catch (updateError) {
-      setError(formatDesktopErrorMessage(updateError) || "安装已下载的 BenchLocal 更新失败。");
+      setError(formatDesktopErrorMessage(updateError) || t("安装已下载的 BenchLocal 更新失败。"));
     }
   };
 
@@ -2504,7 +2507,7 @@ export function App() {
         [benchPackId]: history
       }));
     } catch (historyError) {
-      setError(historyError instanceof Error ? historyError.message : "加载基准包历史失败。");
+      setError(historyError instanceof Error ? historyError.message : t("加载基准包历史失败。"));
     }
   };
 
@@ -2540,7 +2543,7 @@ export function App() {
       }));
     } catch (availabilityError) {
       if (modelIds.some((modelId) => modelAvailabilityPendingRef.current[modelId] === requestId)) {
-        setError(availabilityError instanceof Error ? availabilityError.message : "检查模型可用性失败。");
+        setError(availabilityError instanceof Error ? availabilityError.message : t("检查模型可用性失败。"));
       }
     } finally {
       setCheckingModelAvailability((current) => {
@@ -2616,6 +2619,7 @@ export function App() {
 
         setLoadState(result);
         setDraft(cloneConfig(result.config));
+        setLocale(result.config.ui.language);
         setWorkspaceState(workspaceResult.state);
         setRunSummaries(
           Object.fromEntries(
@@ -2647,10 +2651,10 @@ export function App() {
         setActiveRuns(
           Object.fromEntries(activeRunsResult.map((run) => [run.tabId, { benchPackId: run.benchPackId }]))
         );
-        setAppNotice(result.created ? "已创建全新的 ~/.benchlocal/config.toml 初始配置。" : null);
+        setAppNotice(result.created ? t("已创建全新的 ~/.benchlocal/config.toml 初始配置。") : null);
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "加载 BenchLocal 配置失败。");
+          setError(loadError instanceof Error ? loadError.message : t("加载 BenchLocal 配置失败。"));
         }
       } finally {
         if (!cancelled) {
@@ -2812,8 +2816,8 @@ export function App() {
           const resolvedBenchPackId = benchPackId ?? workspaceStateRef.current?.tabs[tabId]?.benchPackId ?? "";
           const benchPackName = resolvedBenchPackId
             ? createTabTitle(resolvedBenchPackId, benchPackInspectionsRef.current)
-            : "基准包运行";
-          setAppNotice(`已停止 ${benchPackName}。`);
+            : t("基准包运行");
+          setAppNotice(t("已停止 {0}。", benchPackName));
         }
 
         setActiveRuns((current) => {
@@ -2902,10 +2906,11 @@ export function App() {
         const result = await window.benchlocal.config.load();
         setLoadState(result);
         setDraft(cloneConfig(result.config));
+        setLocale(result.config.ui.language);
         await loadBenchPackInspections();
         await loadRegistryEntries();
       } catch (configError) {
-        setError(configError instanceof Error ? configError.message : "重新加载 BenchLocal 配置失败。");
+        setError(configError instanceof Error ? configError.message : t("重新加载 BenchLocal 配置失败。"));
       }
     };
 
@@ -3049,8 +3054,8 @@ export function App() {
 
   useEffect(() => {
     void window.benchlocal.logs.publishDetachedState({
-      workspaceName: activeWorkspace?.name ?? "暂无工作区",
-      tabTitle: activeTab?.title ?? "暂无活动标签页",
+      workspaceName: activeWorkspace?.name ?? t("暂无工作区"),
+      tabTitle: activeTab?.title ?? t("暂无活动标签页"),
       eventCount: activeLogEvents.length,
       events: activeLogEvents
     });
@@ -3264,7 +3269,7 @@ export function App() {
       }
       return true;
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "保存 BenchLocal 配置失败。");
+      setError(saveError instanceof Error ? saveError.message : t("保存 BenchLocal 配置失败。"));
       return false;
     } finally {
       setIsBusy(false);
@@ -3276,7 +3281,7 @@ export function App() {
       return false;
     }
 
-    return persistConfig(draft, { notice: "已保存 ~/.benchlocal/config.toml" });
+    return persistConfig(draft, { notice: t("已保存 ~/.benchlocal/config.toml") });
   };
 
   const configureAgentAccess = async (input: { enabled: boolean; access?: BenchLocalAgentAccess; port?: number }): Promise<void> => {
@@ -3285,9 +3290,9 @@ export function App() {
     try {
       const state = await window.benchlocal.agent.configure(input);
       setAgentAccessState(state);
-      setSettingsNotice(state.enabled ? "已启用本地 Agent 访问。" : "已禁用本地 Agent 访问。");
+      setSettingsNotice(state.enabled ? t("已启用本地 Agent 访问。") : t("已禁用本地 Agent 访问。"));
     } catch (agentError) {
-      setError(agentError instanceof Error ? agentError.message : "更新 Agent 访问失败。");
+      setError(agentError instanceof Error ? agentError.message : t("更新 Agent 访问失败。"));
     }
   };
 
@@ -3297,9 +3302,9 @@ export function App() {
     try {
       const state = await window.benchlocal.agent.regenerateToken();
       setAgentAccessState(state);
-      setSettingsNotice("已重新生成 Agent 访问令牌。");
+      setSettingsNotice(t("已重新生成 Agent 访问令牌。"));
     } catch (agentError) {
-      setError(agentError instanceof Error ? agentError.message : "重新生成 Agent 访问令牌失败。");
+      setError(agentError instanceof Error ? agentError.message : t("重新生成 Agent 访问令牌失败。"));
     }
   };
 
@@ -3344,7 +3349,7 @@ export function App() {
         benchPackId,
         action: "install",
         phase: "resolving",
-        message: "正在从注册表解析基准包。"
+        message: t("正在从注册表解析基准包。")
       }
     }));
 
@@ -3352,7 +3357,7 @@ export function App() {
       const result = await window.benchlocal.benchPacks.install({ benchPackId });
       await refreshBenchPackState(result);
       if (settingsOpenRef.current) {
-        setSettingsNotice(`已安装 ${benchPackId}。`);
+        setSettingsNotice(t("已安装 {0}。", benchPackId));
       }
     } catch (installError) {
       setError(formatRegistryMutationError("install", benchPackId, installError));
@@ -3374,7 +3379,7 @@ export function App() {
     const normalizedUrl = url.trim();
 
     if (!normalizedUrl) {
-      setError("必须填写基准包 URL。");
+      setError(t("必须填写基准包 URL。"));
       return;
     }
 
@@ -3387,7 +3392,7 @@ export function App() {
         benchPackId: THIRD_PARTY_INSTALL_MUTATION_ID,
         action: "install",
         phase: "resolving",
-        message: "正在从 URL 解析基准包。"
+        message: t("正在从 URL 解析基准包。")
       }
     }));
 
@@ -3398,11 +3403,11 @@ export function App() {
         Object.entries(result.config.benchpacks).find(([, benchPack]) => benchPack.source === "archive" && benchPack.url === normalizedUrl)?.[0] ??
         null;
       if (settingsOpenRef.current) {
-        setSettingsNotice(installedBenchPackId ? `已安装 ${installedBenchPackId}。` : "已安装第三方基准包。");
+        setSettingsNotice(installedBenchPackId ? t("已安装 {0}。", installedBenchPackId) : t("已安装第三方基准包。"));
       }
       return true;
     } catch (installError) {
-      setError(formatDesktopErrorMessage(installError) || "从 URL 安装基准包失败。");
+      setError(formatDesktopErrorMessage(installError) || t("从 URL 安装基准包失败。"));
       return false;
     } finally {
       setIsBusy(false);
@@ -3431,7 +3436,7 @@ export function App() {
         benchPackId,
         action: "update",
         phase: "resolving",
-        message: "正在解析基准包更新。"
+        message: t("正在解析基准包更新。")
       }
     }));
 
@@ -3439,7 +3444,7 @@ export function App() {
       const result = await window.benchlocal.benchPacks.update({ benchPackId });
       await refreshBenchPackState(result);
       if (settingsOpenRef.current) {
-        setSettingsNotice(`已更新 ${benchPackId}。`);
+        setSettingsNotice(t("已更新 {0}。", benchPackId));
       }
     } catch (updateError) {
       setError(formatRegistryMutationError("update", benchPackId, updateError));
@@ -3459,7 +3464,7 @@ export function App() {
     }
 
     if (Object.values(activeRuns).some((run) => run.benchPackId === benchPackId)) {
-      setError("请先停止活动的基准包运行，再卸载该基准包。");
+      setError(t("请先停止活动的基准包运行，再卸载该基准包。"));
       return;
     }
 
@@ -3471,7 +3476,7 @@ export function App() {
         benchPackId,
         action: "uninstall",
         phase: "removing",
-        message: "正在移除基准包。"
+        message: t("正在移除基准包。")
       }
     }));
 
@@ -3479,10 +3484,10 @@ export function App() {
       const result = await window.benchlocal.benchPacks.uninstall({ benchPackId });
       await refreshBenchPackState(result);
       if (settingsOpenRef.current) {
-        setSettingsNotice(`已卸载 ${benchPackId}。`);
+        setSettingsNotice(t("已卸载 {0}。", benchPackId));
       }
     } catch (uninstallError) {
-      setError(uninstallError instanceof Error ? uninstallError.message : `卸载 ${benchPackId} 失败。`);
+      setError(uninstallError instanceof Error ? uninstallError.message : t("卸载 {0} 失败。", benchPackId));
     } finally {
       setIsBusy(false);
       setBenchPackMutations((current) => {
@@ -3502,7 +3507,7 @@ export function App() {
     setProviderModal(null);
     setModelModal(null);
     if (settingsOpenRef.current) {
-      setSettingsNotice("已还原未保存的更改。");
+      setSettingsNotice(t("已还原未保存的更改。"));
     }
     setError(null);
   };
@@ -3516,6 +3521,28 @@ export function App() {
     const previousLoadConfig = loadState ? cloneConfig(loadState.config) : null;
     const nextConfig = previousLoadConfig ? cloneConfig(previousLoadConfig) : cloneConfig(draft);
     nextConfig.ui.theme = themeId;
+    setDraft(nextConfig);
+
+    const saved = await persistConfig(nextConfig, {
+      preserveFilesystemDraft: true,
+      previousDraft,
+      previousLoadConfig
+    });
+    if (!saved) {
+      setDraft(previousDraft);
+    }
+  };
+
+  const saveLanguageSelection = async (nextLocale: BenchLocalLocale) => {
+    setLocale(nextLocale);
+    if (!draft) {
+      return;
+    }
+
+    const previousDraft = cloneConfig(draft);
+    const previousLoadConfig = loadState ? cloneConfig(loadState.config) : null;
+    const nextConfig = previousLoadConfig ? cloneConfig(previousLoadConfig) : cloneConfig(draft);
+    nextConfig.ui.language = nextLocale;
     setDraft(nextConfig);
 
     const saved = await persistConfig(nextConfig, {
@@ -3590,7 +3617,7 @@ export function App() {
     setAppNotice(null);
 
     if (!tab.benchPackId || !draft) {
-      setError("请先为该标签页选择基准包。");
+      setError(t("请先为该标签页选择基准包。"));
       return;
     }
 
@@ -3623,13 +3650,13 @@ export function App() {
           return;
         }
       } catch (verifierError) {
-        setError(verifierError instanceof Error ? verifierError.message : "刷新验证器状态失败。");
+        setError(verifierError instanceof Error ? verifierError.message : t("刷新验证器状态失败。"));
         return;
       }
     }
 
     if (selectedModels.length === 0) {
-      setError("运行基准包前，请为该标签页至少选择一个已启用的模型。");
+      setError(t("运行基准包前，请为该标签页至少选择一个已启用的模型。"));
       return;
     }
 
@@ -3709,16 +3736,16 @@ export function App() {
         const completedCells = countStoredRunResults(result);
         setAppNotice(
           completedCells > 0
-            ? `已运行 ${result.benchPackName} 的可用模型。启动其余模型服务器后可继续运行。`
-            : `${result.benchPackName} 没有在线的所选模型。请先启动模型服务器，然后继续该测试。`
+            ? t("已运行 {0} 的可用模型。启动其余模型服务器后可继续运行。", result.benchPackName)
+            : t("{0} 没有在线的所选模型。请先启动模型服务器，然后继续该测试。", result.benchPackName)
         );
       } else if (!result.cancelled) {
-        setAppNotice(`已完成 ${result.benchPackName}：${result.scenarioCount} 个场景、${result.modelCount} 个模型。`);
+        setAppNotice(t("已完成 {0}：{1} 个场景、{2} 个模型。", result.benchPackName, result.scenarioCount, result.modelCount));
       }
       await loadBenchPackInspections();
       await loadHistoryForBenchPack(benchPackId);
     } catch (runError) {
-      setError(runError instanceof Error ? runError.message : `运行基准包 ${benchPackId} 失败。`);
+      setError(runError instanceof Error ? runError.message : t("运行基准包 {0} 失败。", benchPackId));
     } finally {
       setVerifierPreparationModal((current) => (current?.tabId === tab.id ? null : current));
       setActiveRuns((current) => {
@@ -3785,7 +3812,7 @@ export function App() {
       nextTab.updatedAt = new Date().toISOString();
       return current;
     });
-    setAppNotice(`已将 "${tab.title}" 重置为全新运行状态。`);
+    setAppNotice(t("已将 \"{0}\" 重置为全新运行状态。", tab.title));
   };
 
   const resumeTabRun = async (tab: BenchLocalWorkspaceTab, runSummary: BenchPackRunSummary) => {
@@ -3793,12 +3820,12 @@ export function App() {
     setAppNotice(null);
 
     if (!tab.benchPackId || !draft) {
-      setError("请先为该标签页选择基准包。");
+      setError(t("请先为该标签页选择基准包。"));
       return;
     }
 
     if (isRunSummaryComplete(runSummary)) {
-      setError("该保存的运行已完成。");
+      setError(t("该保存的运行已完成。"));
       return;
     }
 
@@ -3888,8 +3915,8 @@ export function App() {
       if (!result.cancelled) {
         setAppNotice(
           isRunSummaryComplete(result)
-            ? `已完成 ${result.benchPackName}：${result.scenarioCount} 个场景、${result.modelCount} 个模型。`
-            : `已继续 ${result.benchPackName}，但运行尚未完成。`
+            ? t("已完成 {0}：{1} 个场景、{2} 个模型。", result.benchPackName, result.scenarioCount, result.modelCount)
+            : t("已继续 {0}，但运行尚未完成。", result.benchPackName)
         );
       }
       await loadBenchPackInspections();
@@ -3913,7 +3940,7 @@ export function App() {
           [tab.id]: previousLoadedHistory
         }));
       }
-      setError(runError instanceof Error ? runError.message : `继续基准包 ${benchPackId} 失败。`);
+      setError(runError instanceof Error ? runError.message : t("继续基准包 {0} 失败。", benchPackId));
     } finally {
       setVerifierPreparationModal((current) => (current?.tabId === tab.id ? null : current));
       setActiveRuns((current) => {
@@ -3936,12 +3963,12 @@ export function App() {
 
   const replayTabRun = async (tab: BenchLocalWorkspaceTab, runSummary: BenchPackRunSummary) => {
     if (!tab.benchPackId) {
-      setError("请先为该标签页选择基准包。");
+      setError(t("请先为该标签页选择基准包。"));
       return;
     }
 
     if (!isRunSummaryComplete(runSummary)) {
-      setError("只有已完成的测试运行才能回放。");
+      setError(t("只有已完成的测试运行才能回放。"));
       return;
     }
 
@@ -4048,7 +4075,7 @@ export function App() {
         });
       }
 
-      setAppNotice(`已回放 ${runSummary.benchPackName}。`);
+      setAppNotice(t("已回放 {0}。", runSummary.benchPackName));
     } finally {
       if (replayRunTokensRef.current.get(tab.id) === token) {
         replayRunTokensRef.current.delete(tab.id);
@@ -4093,7 +4120,7 @@ export function App() {
           activeCellKeys: []
         }
       }));
-      setAppNotice("已停止回放。");
+      setAppNotice(t("已停止回放。"));
       return;
     }
 
@@ -4106,7 +4133,7 @@ export function App() {
       const result = await window.benchlocal.benchPacks.stop({ tabId });
 
       if (!result.stopped) {
-        setAppNotice("该基准包运行已不再活动。");
+        setAppNotice(t("该基准包运行已不再活动。"));
         setActiveRuns((current) => {
           const next = { ...current };
           delete next[tabId];
@@ -4127,7 +4154,7 @@ export function App() {
         delete next[tabId];
         return next;
       });
-      setError(stopError instanceof Error ? stopError.message : "停止基准包运行失败。");
+      setError(stopError instanceof Error ? stopError.message : t("停止基准包运行失败。"));
     }
   };
 
@@ -4162,7 +4189,7 @@ export function App() {
         delete next[benchPackId];
         return next;
       });
-      setError(cancelError instanceof Error ? cancelError.message : "取消验证器启动失败。");
+      setError(cancelError instanceof Error ? cancelError.message : t("取消验证器启动失败。"));
     }
   };
 
@@ -4184,7 +4211,7 @@ export function App() {
       };
         current.tabs[tabId] = {
           id: tabId,
-          title: "新建标签页",
+          title: t("新建标签页"),
           benchPackId: null,
           loadedRunId: null,
           focusedScenarioId: null,
@@ -4218,7 +4245,7 @@ export function App() {
     const removedTabIds = new Set(workspaceState?.workspaces[workspaceId]?.tabIds ?? []);
 
     if (Array.from(removedTabIds).some((tabId) => activeRuns[tabId])) {
-      setError("请先停止活动的基准包运行，再删除该工作区。");
+      setError(t("请先停止活动的基准包运行，再删除该工作区。"));
       return;
     }
 
@@ -4245,7 +4272,7 @@ export function App() {
         current.activeWorkspaceId = nextWorkspaceId;
         current.workspaces[nextWorkspaceId] = {
           id: nextWorkspaceId,
-          name: "我的工作区",
+          name: t("我的工作区"),
           tabIds: [nextTabId],
           activeTabId: nextTabId,
           createdAt: now,
@@ -4253,7 +4280,7 @@ export function App() {
         };
         current.tabs[nextTabId] = {
           id: nextTabId,
-          title: "新建标签页",
+          title: t("新建标签页"),
           benchPackId: null,
           loadedRunId: null,
           focusedScenarioId: null,
@@ -4299,10 +4326,10 @@ export function App() {
       });
 
       if (result.exported) {
-        setAppNotice(`已导出工作区到 ${result.filePath}。`);
+        setAppNotice(t("已导出工作区到 {0}。", result.filePath));
       }
     } catch (workspaceError) {
-      setError(workspaceError instanceof Error ? workspaceError.message : "导出工作区失败。");
+      setError(workspaceError instanceof Error ? workspaceError.message : t("导出工作区失败。"));
     }
   };
 
@@ -4354,7 +4381,7 @@ export function App() {
           id: newWorkspaceId,
           name:
             Object.values(current.workspaces).some((workspace) => workspace.name === importedWorkspace.name)
-              ? `${importedWorkspace.name} 已导入`
+              ? t("{0} 已导入", importedWorkspace.name)
               : importedWorkspace.name,
           tabIds: nextTabIds,
           activeTabId: importedWorkspace.activeTabId ? tabIdMap.get(importedWorkspace.activeTabId) ?? nextTabIds[0] ?? null : nextTabIds[0] ?? null,
@@ -4365,9 +4392,9 @@ export function App() {
         return current;
       });
 
-      setAppNotice(`已导入工作区 "${importedWorkspace.name}"。`);
+      setAppNotice(t("已导入工作区 \"{0}\"。", importedWorkspace.name));
     } catch (workspaceError) {
-      setError(workspaceError instanceof Error ? workspaceError.message : "导入工作区失败。");
+      setError(workspaceError instanceof Error ? workspaceError.message : t("导入工作区失败。"));
     }
   };
 
@@ -4431,7 +4458,7 @@ export function App() {
       const duplicateTabId = `tab-${crypto.randomUUID()}`;
       current.tabs[duplicateTabId] = {
         id: duplicateTabId,
-        title: `${tab.title} 副本`,
+        title: t("{0} 副本", tab.title),
         benchPackId: tab.benchPackId,
         loadedRunId: null,
         focusedScenarioId: tab.focusedScenarioId,
@@ -4504,7 +4531,7 @@ export function App() {
       return;
     }
 
-    const nextTitle = editingTab.value.trim() || "新建标签页";
+    const nextTitle = editingTab.value.trim() || t("新建标签页");
 
     updateWorkspaceState((current) => {
       const tab = current.tabs[editingTab.tabId];
@@ -4559,7 +4586,7 @@ export function App() {
     }
 
     if (activeRuns[tabId]) {
-      setError("关闭该标签页前请先停止基准包运行。");
+      setError(t("关闭该标签页前请先停止基准包运行。"));
       return;
     }
 
@@ -4581,7 +4608,7 @@ export function App() {
         const replacementTabId = `tab-${crypto.randomUUID()}`;
         current.tabs[replacementTabId] = {
           id: replacementTabId,
-          title: "新建标签页",
+          title: t("新建标签页"),
           benchPackId: null,
           loadedRunId: null,
           focusedScenarioId: null,
@@ -4664,7 +4691,7 @@ export function App() {
         });
       }
     } catch (historyError) {
-      setError(historyError instanceof Error ? historyError.message : "加载基准包历史失败。");
+      setError(historyError instanceof Error ? historyError.message : t("加载基准包历史失败。"));
     }
   };
 
@@ -4674,14 +4701,14 @@ export function App() {
     }
 
     if (!detail.runId) {
-      setError("该场景尚不属于已保存的测试运行。");
+      setError(t("该场景尚不属于已保存的测试运行。"));
       return;
     }
 
     const tab = workspaceState.tabs[detail.tabId];
 
     if (!tab || tab.benchPackId !== detail.benchPackId) {
-      setError("该测试的原始标签页已不可用。");
+      setError(t("该测试的原始标签页已不可用。"));
       return;
     }
 
@@ -4744,7 +4771,7 @@ export function App() {
         }));
       }
       await loadHistoryForBenchPack(detail.benchPackId);
-      setAppNotice(`已对 ${detail.modelLabel ?? detail.modelId} 重新测试 ${detail.scenarioId}。`);
+      setAppNotice(t("已对 {0} 重新测试 {1}。", detail.modelLabel ?? detail.modelId, detail.scenarioId));
     } catch (retryError) {
       setLiveRuns((current) => {
         const existing = current[detail.tabId];
@@ -4761,7 +4788,7 @@ export function App() {
           }
         };
       });
-      setError(retryError instanceof Error ? retryError.message : "重试所选测试失败。");
+      setError(retryError instanceof Error ? retryError.message : t("重试所选测试失败。"));
     }
   };
 
@@ -4781,14 +4808,14 @@ export function App() {
     }
 
     if (!tab.benchPackId) {
-      setError("该标签页尚未选择基准包。");
+      setError(t("该标签页尚未选择基准包。"));
       return;
     }
 
     const summary = runSummaries[tab.id];
 
     if (!summary?.runId) {
-      setError("请先运行该基准包，再重试单个结果。");
+      setError(t("请先运行该基准包，再重试单个结果。"));
       return;
     }
 
@@ -4853,10 +4880,10 @@ export function App() {
       }
 
       await loadHistoryForBenchPack(tab.benchPackId);
-      setAppNotice(`已重试 ${label}：${cells.length - failures.length}/${cells.length}。`);
+      setAppNotice(t("已重试 {0}：{1}/{2}。", label, cells.length - failures.length, cells.length));
 
       if (failures.length > 0) {
-        setError(`部分重试未完成：${failures.slice(0, 3).join("、")}${failures.length > 3 ? "…" : ""}`);
+        setError(t("部分重试未完成：{0}{1}", failures.slice(0, 3).join("、"), failures.length > 3 ? "…" : ""));
       }
     } finally {
       setLiveRuns((current) => {
@@ -5022,7 +5049,7 @@ export function App() {
       const removedRunIds = new Set(result.removedRunIds);
 
       if (removedRunIds.size === 0) {
-        setAppNotice("未找到所选的测试历史。");
+        setAppNotice(t("未找到所选的测试历史。"));
         return;
       }
 
@@ -5038,10 +5065,10 @@ export function App() {
       );
       clearLoadedHistoryForBenchPack(benchPackId, removedRunIds);
       setAppNotice(
-        `已删除 ${benchPackName} 的 ${removedRunIds.size} 条所选历史记录。`
+        t("已删除 {0} 的 {1} 条所选历史记录。", benchPackName, removedRunIds.size)
       );
     } catch (historyError) {
-      setError(historyError instanceof Error ? historyError.message : "删除基准包历史失败。");
+      setError(historyError instanceof Error ? historyError.message : t("删除基准包历史失败。"));
     }
   };
 
@@ -5064,7 +5091,7 @@ export function App() {
     };
 
     const saved = await persistConfig(nextConfig, {
-      notice: providerModal.mode === "create" ? "已添加提供商。" : "已更新提供商。",
+      notice: providerModal.mode === "create" ? t("已添加提供商。") : t("已更新提供商。"),
       preserveFilesystemDraft: true,
       previousDraft,
       previousLoadConfig
@@ -5092,7 +5119,7 @@ export function App() {
     nextConfig.models = nextConfig.models.filter((model) => model.provider !== providerId);
 
     const saved = await persistConfig(nextConfig, {
-      notice: `已删除提供商 "${providerName}"。`,
+      notice: t("已删除提供商 \"{0}\"。", providerName),
       preserveFilesystemDraft: true,
       previousDraft,
       previousLoadConfig
@@ -5139,7 +5166,7 @@ export function App() {
     };
 
     await persistConfig(nextConfig, {
-      notice: `已复制提供商 "${nextProviderName}"。`,
+      notice: t("已复制提供商 \"{0}\"。", nextProviderName),
       preserveFilesystemDraft: true,
       previousDraft,
       previousLoadConfig
@@ -5151,12 +5178,12 @@ export function App() {
     const linkedModelCount = (draft?.models ?? []).filter((model) => model.provider === providerId).length;
 
     setConfirmDialog({
-      title: "删除提供商",
+      title: t("删除提供商"),
       subtitle:
         linkedModelCount > 0
-          ? `删除 ${provider?.name ?? "该提供商"}？这将同时删除 ${linkedModelCount} 个关联模型，并从所有标签页选择中移除。`
-          : `删除 ${provider?.name ?? "该提供商"}？`,
-      confirmLabel: "删除提供商",
+          ? t("删除 {0}？这将同时删除 {1} 个关联模型，并从所有标签页选择中移除。", provider?.name ?? t("该提供商"), linkedModelCount)
+          : t("删除 {0}？", provider?.name ?? t("该提供商")),
+      confirmLabel: t("删除提供商"),
       tone: "danger",
       onConfirm: () => {
         void deleteProvider(providerId).then((deleted) => {
@@ -5177,12 +5204,12 @@ export function App() {
     const providerName = getProviderDisplayName(draft.providers, modelModal.form.provider);
 
     if (!provider) {
-      setError("请先选择提供商。");
+      setError(t("请先选择提供商。"));
       return;
     }
 
     if (!providerSupportsModelDiscovery(provider)) {
-      setError(`${providerName} 暂不支持浏览模型。`);
+      setError(t("{0} 暂不支持浏览模型。", providerName));
       return;
     }
 
@@ -5225,7 +5252,7 @@ export function App() {
               error:
                 discoverError instanceof Error
                   ? discoverError.message
-                  : `无法从 ${providerName} 加载模型。`
+                  : t("无法从 {0} 加载模型。", providerName)
             }
           : current
       );
@@ -5240,12 +5267,12 @@ export function App() {
     const modelConfig = buildModelConfig(modelModal.form, draft?.providers ?? {});
 
     if (!modelConfig.provider || !modelConfig.model) {
-      setError("必须填写模型提供商和模型标识。");
+      setError(t("必须填写模型提供商和模型标识。"));
       return;
     }
 
     if (!draft?.providers[modelConfig.provider]) {
-      setError(`模型提供商 "${getProviderDisplayName(draft.providers, modelConfig.provider)}" 尚不存在。`);
+      setError(t("模型提供商 \"{0}\" 尚不存在。", getProviderDisplayName(draft.providers, modelConfig.provider)));
       return;
     }
 
@@ -5261,7 +5288,7 @@ export function App() {
     }
 
     const saved = await persistConfig(nextConfig, {
-      notice: modelModal.mode === "create" ? "已添加模型。" : "已更新模型。",
+      notice: modelModal.mode === "create" ? t("已添加模型。") : t("已更新模型。"),
       preserveFilesystemDraft: true,
       previousDraft,
       previousLoadConfig
@@ -5297,7 +5324,7 @@ export function App() {
     nextConfig.models.splice(index, 1);
 
     const saved = await persistConfig(nextConfig, {
-      notice: "已删除模型。",
+      notice: t("已删除模型。"),
       preserveFilesystemDraft: true,
       previousDraft,
       previousLoadConfig
@@ -5345,7 +5372,7 @@ export function App() {
     nextConfig.models.push(nextModel);
 
     await persistConfig(nextConfig, {
-      notice: `已复制模型 "${nextModelLabel}"。`,
+      notice: t("已复制模型 \"{0}\"。", nextModelLabel),
       preserveFilesystemDraft: true,
       previousDraft,
       previousLoadConfig
@@ -5365,12 +5392,12 @@ export function App() {
       : 0;
 
     setConfirmDialog({
-      title: "删除模型",
+      title: t("删除模型"),
       subtitle:
         linkedTabCount > 0
-          ? `删除 ${model.label}？这将同时从 ${linkedTabCount} 个标签页选择中移除。`
-          : `删除 ${model.label}？`,
-      confirmLabel: "删除模型",
+          ? t("删除 {0}？这将同时从 {1} 个标签页选择中移除。", model.label, linkedTabCount)
+          : t("删除 {0}？", model.label),
+      confirmLabel: t("删除模型"),
       tone: "danger",
       onConfirm: () => {
         void deleteModel(index).then((deleted) => {
@@ -5515,8 +5542,8 @@ export function App() {
                 type="button"
                 onClick={() => setSidebarOpen((current) => !current)}
                 className="toolbar-icon-button"
-                aria-label={sidebarOpen ? "隐藏侧栏" : "显示侧栏"}
-                title={sidebarOpen ? "隐藏侧栏" : "显示侧栏"}
+                aria-label={sidebarOpen ? t("隐藏侧栏") : t("显示侧栏")}
+                title={sidebarOpen ? t("隐藏侧栏") : t("显示侧栏")}
               >
                 <Sidebar size={16} />
               </button>
@@ -5557,22 +5584,22 @@ export function App() {
                     type="button"
                     onClick={() => setSettingsOpen(true)}
                     className="ghost-button"
-                    aria-label="打开设置"
-                    title="设置"
+                    aria-label={t("打开设置")}
+                    title={t("设置")}
                   >
                     <Cog size={16} />
-                    设置
+                    {t("设置")}
                   </button>
                   {appUpdateState?.status === "downloaded" ? (
                     <button
                       type="button"
                       onClick={() => void installDownloadedAppUpdate()}
                       className="button-warn header-update-button"
-                      aria-label="重启 BenchLocal 以安装更新"
-                      title={downloadedUpdateVersion ? `安装 BenchLocal ${downloadedUpdateVersion}` : "安装 BenchLocal 更新"}
+                      aria-label={t("重启 BenchLocal 以安装更新")}
+                      title={downloadedUpdateVersion ? t("安装 BenchLocal {0}", downloadedUpdateVersion) : t("安装 BenchLocal 更新")}
                     >
                       <ArrowUp size={16} />
-                      重启以更新
+                      {t("重启以更新")}
                     </button>
                   ) : null}
                 </div>
@@ -5587,11 +5614,28 @@ export function App() {
                       aria-expanded={themeMenuOpen}
                     >
                       <Palette size={15} />
-                      <span className="settings-theme-button-label">Theme: {currentThemeLabel}</span>
+                      <span className="settings-theme-button-label">{t("主题：{0}", currentThemeLabel)}</span>
                       <ChevronDown size={14} />
                     </button>
                     {themeMenuOpen ? (
                       <div className="run-mode-menu settings-theme-menu" role="menu">
+                        <div className="settings-theme-menu-section">{t("界面语言")}</div>
+                        {SUPPORTED_LOCALES.map((localeOption) => (
+                          <button
+                            key={localeOption.id}
+                            type="button"
+                            role="menuitemradio"
+                            aria-checked={locale === localeOption.id}
+                            className={`run-mode-menu-item${locale === localeOption.id ? " is-active" : ""}`}
+                            onClick={() => {
+                              setThemeMenuOpen(false);
+                              void saveLanguageSelection(localeOption.id);
+                            }}
+                          >
+                            {localeOption.label}
+                          </button>
+                        ))}
+                        <div className="settings-theme-menu-section">{t("主题")}</div>
                         {themeOptions.map((themeId) => (
                           <button
                             key={themeId}
@@ -5667,7 +5711,7 @@ export function App() {
                     benchPackName,
                     verifierId,
                     phase: "checking_docker",
-                    message: "正在检查本地 Docker 可用性。"
+                    message: t("正在检查本地 Docker 可用性。")
                   }
                 });
 
@@ -5677,10 +5721,10 @@ export function App() {
                 } catch (verifierError) {
                   if (isAbortLikeError(verifierError)) {
                     if (settingsOpenRef.current) {
-                      setSettingsNotice(`已取消准备 ${verifierId}。`);
+                      setSettingsNotice(t("已取消准备 {0}。", verifierId));
                     }
                   } else {
-                    setError(verifierError instanceof Error ? verifierError.message : "启动验证器失败。");
+                    setError(verifierError instanceof Error ? verifierError.message : t("启动验证器失败。"));
                   }
                 } finally {
                   setSettingsVerifierPreparationModal((current) => (current?.benchPackId === benchPackId ? null : current));
@@ -5700,14 +5744,14 @@ export function App() {
                   const status = await window.benchlocal.verifiers.stop({ benchPackId });
                   setVerifierStatuses((current) => ({ ...current, [benchPackId]: status }));
                 } catch (verifierError) {
-                  setError(verifierError instanceof Error ? verifierError.message : "停止验证器失败。");
+                  setError(verifierError instanceof Error ? verifierError.message : t("停止验证器失败。"));
                 }
               }}
               onDeleteVerifierImage={(benchPackId, benchPackName, verifierId) => {
                 setConfirmDialog({
-                  title: "删除验证器镜像",
-                  subtitle: `删除 ${benchPackName} 中验证器 "${verifierId}" 的本地 Docker 镜像？下次启动该验证器时，BenchLocal 会重新拉取或构建。`,
-                  confirmLabel: "删除镜像",
+                  title: t("删除验证器镜像"),
+                  subtitle: t("删除 {0} 中验证器 \"{1}\" 的本地 Docker 镜像？下次启动该验证器时，BenchLocal 会重新拉取或构建。", benchPackName, verifierId),
+                  confirmLabel: t("删除镜像"),
                   tone: "danger",
                   onConfirm: () => {
                     void (async () => {
@@ -5720,12 +5764,12 @@ export function App() {
                         if (settingsOpenRef.current) {
                           setSettingsNotice(
                             result.removed
-                              ? `已删除 Docker 镜像 ${result.image}。`
-                              : `Docker 镜像 ${result.image} 本就不存在。`
+                              ? t("已删除 Docker 镜像 {0}。", result.image)
+                              : t("Docker 镜像 {0} 本就不存在。", result.image)
                           );
                         }
                       } catch (verifierError) {
-                        setError(verifierError instanceof Error ? verifierError.message : "删除验证器镜像失败。");
+                        setError(verifierError instanceof Error ? verifierError.message : t("删除验证器镜像失败。"));
                       } finally {
                         setIsBusy(false);
                       }
@@ -5750,13 +5794,13 @@ export function App() {
 	            <aside className={`desktop-sidebar${sidebarOpen ? "" : " is-hidden"}`}>
 	              <div className="sidebar-section">
                   <div className="sidebar-section-header">
-	                <p className="sidebar-label">工作区</p>
+	                <p className="sidebar-label">{t("工作区")}</p>
                     <button
                       type="button"
                       onClick={createWorkspace}
                       className="sidebar-section-action"
-                      aria-label="新建工作区"
-                      title="新建工作区"
+                      aria-label={t("新建工作区")}
+                      title={t("新建工作区")}
                     >
                       <Plus size={14} />
                     </button>
@@ -5800,8 +5844,8 @@ export function App() {
 	                            <button
 	                              type="button"
                                 className="sidebar-item-action"
-                                title="重命名工作区"
-                                aria-label={`重命名 ${workspace.name}`}
+                                title={t("重命名工作区")}
+                                aria-label={t("重命名 {0}", workspace.name)}
                                 onClick={() => {
                                   setWorkspaceModal({
                                     mode: "rename",
@@ -5817,21 +5861,21 @@ export function App() {
 	                    );
 	                  })
 	                ) : (
-	                  <div className="sidebar-empty">暂无工作区。</div>
+	                  <div className="sidebar-empty">{t("暂无工作区。")}</div>
 	                )}
 	              </div>
 
                 <div className="sidebar-footer">
                   <button type="button" onClick={() => void importWorkspace()} className="ghost-button sidebar-footer-button">
                     <FolderOpen size={14} />
-                    导入工作区
+                    {t("导入工作区")}
                   </button>
                 </div>
 
 	            </aside>
 
 	            <section className="desktop-main">
-	              {isBusy && !draft ? <Banner tone="neutral">正在加载 BenchLocal 配置...</Banner> : null}
+	              {isBusy && !draft ? <Banner tone="neutral">{t("正在加载 BenchLocal 配置...")}</Banner> : null}
 
 	              <div className="workspace-scroll">
 	                {draft ? (
@@ -5847,7 +5891,7 @@ export function App() {
                               }}
                             />
                           ) : null}
-                          <div ref={tabStripRef} className="tab-strip" role="tablist" aria-label="打开基准包列表">
+                          <div ref={tabStripRef} className="tab-strip" role="tablist" aria-label={t("打开基准包列表")}>
 	                          {workspaceTabs.map((tab) => {
 	                            const inspection = benchPackInspections.find((candidate) => candidate.id === tab.benchPackId);
                               const isTabRunning = Boolean(activeRuns[tab.id]);
@@ -5972,7 +6016,7 @@ export function App() {
 	                                  <span className="tab-chip-title">{tab.title}</span>
                                   )}
                                     {showTabSpinner ? (
-                                      <span className="tab-chip-spinner" title="基准包正在运行">
+                                      <span className="tab-chip-spinner" title={t("基准包正在运行")}>
                                         <span className="spinner" />
                                       </span>
                                     ) : null}
@@ -5984,16 +6028,16 @@ export function App() {
 	                                <button
 	                                  type="button"
 	                                  className="tab-chip-close"
-	                                  aria-label={`关闭 ${tab.title}`}
+	                                  aria-label={t("关闭 {0}", tab.title)}
 	                                  onClick={(event) => {
 	                                    event.stopPropagation();
                                       if (isEditingTab) {
                                         cancelEditingTab();
                                       }
                                       setConfirmDialog({
-                                        title: "关闭标签页",
-                                        subtitle: `关闭 "${tab.title}"？该基准包标签页将从此工作区移除。`,
-                                        confirmLabel: "关闭标签页",
+                                        title: t("关闭标签页"),
+                                        subtitle: t("关闭 \"{0}\"？该基准包标签页将从此工作区移除。", tab.title),
+                                        confirmLabel: t("关闭标签页"),
                                         onConfirm: () => closeTab(tab.id)
                                       });
 	                                  }}
@@ -6007,8 +6051,8 @@ export function App() {
                                 type="button"
                                 onClick={() => setTabMenuOpen(true)}
                                 className={`tab-chip-add-button${tabStripOverflow ? " is-sticky" : ""}`}
-                                aria-label="新建标签页"
-                                title="新建标签页"
+                                aria-label={t("新建标签页")}
+                                title={t("新建标签页")}
                               >
                                 <Plus size={14} />
                               </button>
@@ -6018,8 +6062,8 @@ export function App() {
                               type="button"
                               onClick={() => scrollTabStrip(-240)}
                               className="tab-strip-nav-button"
-                              aria-label="向左滚动标签页"
-                              title="向左滚动标签页"
+                              aria-label={t("向左滚动标签页")}
+                              title={t("向左滚动标签页")}
                             >
                               <ChevronLeft size={14} />
                             </button>
@@ -6027,8 +6071,8 @@ export function App() {
                               type="button"
                               onClick={() => scrollTabStrip(240)}
                               className="tab-strip-nav-button"
-                              aria-label="向右滚动标签页"
-                              title="向右滚动标签页"
+                              aria-label={t("向右滚动标签页")}
+                              title={t("向右滚动标签页")}
                             >
                               <ChevronRight size={14} />
                             </button>
@@ -6228,9 +6272,9 @@ export function App() {
                     />
                     <div className="bottom-drawer-header">
                       <div>
-                        <p className="eyebrow">运行日志</p>
+                        <p className="eyebrow">{t("运行日志")}</p>
                         <div className="bottom-drawer-title">
-                          {activeTab ? activeTab.title : "暂无活动标签页"}
+                          {activeTab ? activeTab.title : t("暂无活动标签页")}
                         </div>
                       </div>
                       <div className="section-actions">
@@ -6240,15 +6284,15 @@ export function App() {
                             checked={logsAutoScroll}
                             onChange={(event) => setLogsAutoScroll(event.target.checked)}
                           />
-                          <span>自动滚动</span>
+                          <span>{t("自动滚动")}</span>
                         </label>
-                        <span className="status-chip status-idle">{activeLogEvents.length} 条事件</span>
+                        <span className="status-chip status-idle">{t("{0} 条事件", activeLogEvents.length)}</span>
                         <button
                           type="button"
                           onClick={() => setLogsOpen(false)}
                           className="toolbar-icon-button"
-                          aria-label="隐藏日志"
-                          title="隐藏日志"
+                          aria-label={t("隐藏日志")}
+                          title={t("隐藏日志")}
                         >
                           <X size={14} />
                         </button>
@@ -6264,7 +6308,7 @@ export function App() {
                         ))}
                       </div>
                     ) : (
-                      <div className="bottom-drawer-empty">活动标签页暂无运行日志。</div>
+                      <div className="bottom-drawer-empty">{t("活动标签页暂无运行日志。")}</div>
                     )}
                   </section>
                 ) : null}
@@ -6275,11 +6319,11 @@ export function App() {
             <footer className="status-footer">
               <div className="status-footer-group">
                 <span className="status-footer-item">
-                  {activeWorkspace?.name ?? "暂无工作区"}
+                  {activeWorkspace?.name ?? t("暂无工作区")}
                 </span>
                 <span className="status-footer-divider" />
                 <span className="status-footer-item">
-                  {activeTab?.title ?? "暂无标签页"}
+                  {activeTab?.title ?? t("暂无标签页")}
                 </span>
               </div>
               <div className="status-footer-group">
@@ -6289,7 +6333,7 @@ export function App() {
                   className={`status-footer-button${logsOpen ? " is-active" : ""}`}
                 >
                   <Logs size={13} />
-                  {logsOpen ? "隐藏日志" : "显示日志"}
+                  {logsOpen ? t("隐藏日志") : t("显示日志")}
                 </button>
                 <button
                   type="button"
@@ -6307,9 +6351,9 @@ export function App() {
                   className={`status-footer-button${logsDetached ? " is-active" : ""}`}
                 >
                   <Sidebar size={13} />
-                  {logsDetached ? "关闭日志窗口" : "分离日志"}
+                  {logsDetached ? t("关闭日志窗口") : t("分离日志")}
                 </button>
-                <span className="status-footer-item">{activeLogEvents.length} 条事件</span>
+                <span className="status-footer-item">{t("{0} 条事件", activeLogEvents.length)}</span>
               </div>
             </footer>
           ) : null}
@@ -6321,11 +6365,11 @@ export function App() {
 
       {providerModal ? (
         <Modal
-          title={providerModal.mode === "create" ? "添加提供商" : "编辑提供商"}
-          subtitle="创建或更新共享提供商条目。"
+          title={providerModal.mode === "create" ? t("添加提供商") : t("编辑提供商")}
+          subtitle={t("创建或更新共享提供商条目。")}
           onClose={() => setProviderModal(null)}
           onSubmit={saveProviderModal}
-          submitLabel={providerModal.mode === "create" ? "创建提供商" : "保存提供商"}
+          submitLabel={providerModal.mode === "create" ? t("创建提供商") : t("保存提供商")}
           leadingActions={
             providerModal.mode === "edit" ? (
               <button
@@ -6336,14 +6380,14 @@ export function App() {
                 className="button-danger"
               >
                 <Trash2 size={14} />
-                删除提供商
+                {t("删除提供商")}
               </button>
             ) : undefined
           }
         >
           <div className="entry-grid two-col">
             <InlineSelectField
-              label="提供商类型"
+              label={t("提供商类型")}
               value={providerModal.form.kind}
               options={PROVIDER_KIND_OPTIONS.map((option) => option.value)}
               getOptionLabel={(value) => providerKindLabel(value as BenchLocalProviderKind)}
@@ -6374,7 +6418,7 @@ export function App() {
               }
             />
             <Field
-              label="显示名称"
+              label={t("显示名称")}
               value={providerModal.form.name}
               placeholder={defaultProviderName(providerModal.form.kind)}
               onChange={(value) =>
@@ -6382,19 +6426,19 @@ export function App() {
               }
             />
             <Field
-              label="API 密钥"
+              label={t("API 密钥")}
               type="password"
               value={providerModal.form.api_key}
               placeholder={defaultProviderApiKeyPlaceholder(providerModal.form.kind)}
               onChange={(value) => setProviderModal((current) => current ? { ...current, form: { ...current.form, api_key: value } } : current)}
             />
             <FieldToggle
-              label="启用"
+              label={t("启用")}
               checked={providerModal.form.enabled}
               onChange={(checked) => setProviderModal((current) => current ? { ...current, form: { ...current.form, enabled: checked } } : current)}
             />
           </div>
-          <Field label="基础 URL" value={providerModal.form.base_url} onChange={(value) => setProviderModal((current) => current ? { ...current, form: { ...current.form, base_url: value } } : current)} />
+          <Field label={t("基础 URL")} value={providerModal.form.base_url} onChange={(value) => setProviderModal((current) => current ? { ...current, form: { ...current.form, base_url: value } } : current)} />
         </Modal>
       ) : null}
 
@@ -6405,11 +6449,11 @@ export function App() {
 
           return (
             <Modal
-              title={modelModal.mode === "create" ? "添加模型" : "编辑模型"}
-              subtitle="模型在所有已安装的基准包之间共享。"
+              title={modelModal.mode === "create" ? t("添加模型") : t("编辑模型")}
+              subtitle={t("模型在所有已安装的基准包之间共享。")}
               onClose={() => setModelModal(null)}
               onSubmit={saveModelModal}
-              submitLabel={modelModal.mode === "create" ? "创建模型" : "保存模型"}
+              submitLabel={modelModal.mode === "create" ? t("创建模型") : t("保存模型")}
               leadingActions={
                 modelModal.mode === "edit" ? (
                   <button
@@ -6420,22 +6464,22 @@ export function App() {
                     className="button-danger"
                   >
                     <Trash2 size={14} />
-                    删除模型
+                    {t("删除模型")}
                   </button>
                 ) : undefined
               }
             >
               <div className="entry-grid two-col">
                 <InlineSelectField
-                  label="提供商"
+                  label={t("提供商")}
                   value={modelModal.form.provider}
                   options={providerIds.length > 0 ? providerIds : ["openrouter"]}
                   getOptionLabel={(value) => getProviderDisplayName(draft?.providers ?? {}, value)}
                   onChange={(value) => setModelModal((current) => current ? { ...current, form: { ...current.form, provider: value } } : current)}
                 />
-                <Field label="分组" value={modelModal.form.group} placeholder="primary" onChange={(value) => setModelModal((current) => current ? { ...current, form: { ...current.form, group: value } } : current)} />
+                <Field label={t("分组")} value={modelModal.form.group} placeholder="primary" onChange={(value) => setModelModal((current) => current ? { ...current, form: { ...current.form, group: value } } : current)} />
                 <label className="field-block model-field-with-action">
-                  <span className="field-label">模型标识</span>
+                  <span className="field-label">{t("模型标识")}</span>
                   <div className="model-field-with-action-row">
                     <input
                       type="text"
@@ -6453,24 +6497,24 @@ export function App() {
                       disabled={!canBrowseModels}
                       title={
                         canBrowseModels
-                          ? "浏览模型"
-                          : "目前仅 OpenRouter 和 OpenAI 兼容提供商支持浏览模型。"
+                          ? t("浏览模型")
+                          : t("目前仅 OpenRouter 和 OpenAI 兼容提供商支持浏览模型。")
                       }
                     >
                       <LayoutList size={14} />
-                      浏览模型
+                      {t("浏览模型")}
                     </button>
                   </div>
                 </label>
-                <Field label="显示名称" value={modelModal.form.label} placeholder="GPT-4.1（OpenRouter）" onChange={(value) => setModelModal((current) => current ? { ...current, form: { ...current.form, label: value } } : current)} />
+                <Field label={t("显示名称~label")} value={modelModal.form.label} placeholder="GPT-4.1（OpenRouter）" onChange={(value) => setModelModal((current) => current ? { ...current, form: { ...current.form, label: value } } : current)} />
                 <Field
-                  label="显示引用"
+                  label={t("显示引用")}
                   value={`${getProviderDisplayName(draft?.providers ?? {}, modelModal.form.provider)}：${modelModal.form.model}`.replace(/：$/, "")}
                   readOnly
                   onChange={() => undefined}
                 />
                 <FieldToggle
-                  label="启用"
+                  label={t("启用")}
                   checked={modelModal.form.enabled}
                   onChange={(checked) => setModelModal((current) => current ? { ...current, form: { ...current.form, enabled: checked } } : current)}
                 />
@@ -6591,8 +6635,8 @@ export function App() {
 
       {modelAliasModal && draft ? (
         <Modal
-          title="编辑模型别名"
-          subtitle={`仅在当前标签页中覆盖该模型的显示名称。默认标签：${modelAliasModal.baseLabel}`}
+          title={t("编辑模型别名")}
+          subtitle={t("仅在当前标签页中覆盖该模型的显示名称。默认标签：{0}", modelAliasModal.baseLabel)}
           onClose={() => setModelAliasModal(null)}
           onSubmit={() => {
             updateWorkspaceState((current) => {
@@ -6614,10 +6658,10 @@ export function App() {
 
             setModelAliasModal(null);
           }}
-          submitLabel="保存别名"
+          submitLabel={t("保存别名")}
         >
           <Field
-            label="别名"
+            label={t("别名")}
             value={modelAliasModal.alias}
             placeholder={modelAliasModal.baseLabel}
             onChange={(value) =>
@@ -6639,22 +6683,22 @@ export function App() {
 
       {workspaceModal ? (
         <Modal
-          title="重命名工作区"
-          subtitle="修改该工作区的显示名称。"
+          title={t("重命名工作区")}
+          subtitle={t("修改该工作区的显示名称。")}
           onClose={() => setWorkspaceModal(null)}
           onSubmit={() => {
             if (!workspaceModal.name.trim()) {
-              setError("工作区名称为必填项。");
+              setError(t("工作区名称为必填项。"));
               return;
             }
 
             renameWorkspace(workspaceModal.workspaceId, workspaceModal.name);
             setWorkspaceModal(null);
           }}
-          submitLabel="保存工作区"
+          submitLabel={t("保存工作区")}
         >
           <Field
-            label="工作区名称"
+            label={t("工作区名称")}
             value={workspaceModal.name}
             onChange={(value) => setWorkspaceModal((current) => (current ? { ...current, name: value } : current))}
           />
@@ -6675,8 +6719,8 @@ export function App() {
               title: `Delete ${runIds.length} selected ${
                 runIds.length === 1 ? "history" : "histories"
               } for ${historyModal.benchPackName}?`,
-              subtitle: "这将永久删除所选的已保存测试运行。",
-              confirmLabel: "删除所选",
+              subtitle: t("这将永久删除所选的已保存测试运行。"),
+              confirmLabel: t("删除所选"),
               tone: "danger",
               onConfirm: () => {
                 void deleteSelectedHistoryForBenchPack(historyModal.benchPackId, historyModal.benchPackName, runIds);
@@ -6736,7 +6780,7 @@ export function App() {
             }}
           >
             <Save size={14} />
-            <span>导出工作区</span>
+            <span>{t("导出工作区")}</span>
           </button>
           <button
             type="button"
@@ -6744,16 +6788,16 @@ export function App() {
             onClick={() => {
               setWorkspaceContextMenu(null);
               setConfirmDialog({
-                title: "删除工作区",
-                subtitle: `删除 "${workspaceContextMenu.workspaceName}" 及其所有标签页？此操作无法撤销。`,
-                confirmLabel: "删除工作区",
+                title: t("删除工作区"),
+                subtitle: t("删除 \"{0}\" 及其所有标签页？此操作无法撤销。", workspaceContextMenu.workspaceName),
+                confirmLabel: t("删除工作区"),
                 tone: "danger",
                 onConfirm: () => deleteWorkspace(workspaceContextMenu.workspaceId)
               });
             }}
           >
             <Trash2 size={14} />
-            <span>删除工作区</span>
+            <span>{t("删除工作区")}</span>
           </button>
         </div>
       ) : null}
@@ -6773,7 +6817,7 @@ export function App() {
             onClick={() => duplicateTab(tabContextMenu.tabId)}
           >
             <Copy size={14} />
-            <span>复制标签页</span>
+            <span>{t("复制标签页")}</span>
           </button>
           <button
             type="button"
@@ -6784,7 +6828,7 @@ export function App() {
             }}
           >
             <Pencil size={14} />
-            <span>重命名标签页</span>
+            <span>{t("重命名标签页")}</span>
           </button>
           <button
             type="button"
@@ -6792,15 +6836,15 @@ export function App() {
             onClick={() => {
               setTabContextMenu(null);
               setConfirmDialog({
-                title: "关闭标签页",
-                subtitle: `关闭 "${tabContextMenu.tabTitle}"？该基准包标签页将从此工作区移除。`,
-                confirmLabel: "关闭标签页",
+                title: t("关闭标签页"),
+                subtitle: t("关闭 \"{0}\"？该基准包标签页将从此工作区移除。", tabContextMenu.tabTitle),
+                confirmLabel: t("关闭标签页"),
                 onConfirm: () => closeTab(tabContextMenu.tabId)
               });
             }}
           >
             <X size={14} />
-            <span>关闭标签页</span>
+            <span>{t("关闭标签页")}</span>
           </button>
         </div>
       ) : null}
@@ -6811,7 +6855,7 @@ export function App() {
           subtitle={`${detailModal.modelLabel ?? detailModal.modelId} · ${detailModal.summary}`}
           onClose={() => setDetailModal(null)}
           onSubmit={() => setDetailModal(null)}
-          submitLabel="关闭"
+          submitLabel={t("关闭")}
           leadingActions={
             <button
               type="button"
@@ -6820,15 +6864,15 @@ export function App() {
               disabled={!detailModal.runId}
             >
               <RotateCcw size={14} />
-              重试
+              {t("重试")}
             </button>
           }
         >
           <div className="dialog-summary">
             <div className="dialog-summary-copy">
-              <span className="dialog-summary-label">状态</span>
+              <span className="dialog-summary-label">{t("状态")}</span>
               <span className="dialog-summary-value">
-                {detailModal.errorType === "provider_error" ? "提供商 HTTP 错误" : "校验结果"}
+                {detailModal.errorType === "provider_error" ? t("提供商 HTTP 错误") : t("校验结果")}
               </span>
             </div>
             <span
@@ -6842,13 +6886,13 @@ export function App() {
                     : "status-danger"
               }`}
             >
-              {detailModal.errorType === "provider_error" ? "提供商错误" : resultStatusLabel(detailModal.status)}
+              {detailModal.errorType === "provider_error" ? t("提供商错误") : resultStatusLabel(detailModal.status)}
             </span>
           </div>
           {detailModal.timings?.durationMs !== undefined ? (
             <div className="dialog-summary">
               <div className="dialog-summary-copy">
-                <span className="dialog-summary-label">实际耗时</span>
+                <span className="dialog-summary-label">{t("实际耗时")}</span>
                 <span className="dialog-summary-value">
                   {formatDurationMs(detailModal.timings.durationMs)}
                 </span>
@@ -6863,7 +6907,7 @@ export function App() {
           {detailModal.score !== undefined || detailModal.points !== undefined ? (
             <div className="dialog-summary">
               <div className="dialog-summary-copy">
-                <span className="dialog-summary-label">场景得分</span>
+                <span className="dialog-summary-label">{t("场景得分")}</span>
                 <span className="dialog-summary-value">
                   {detailModal.score ?? "—"}{detailModal.points !== undefined ? ` / ${detailModal.points}` : ""}
                 </span>
@@ -6872,19 +6916,19 @@ export function App() {
           ) : null}
           {detailModal.note ? (
             <div className="result-detail-note">
-              <span className="dialog-summary-label">备注</span>
+              <span className="dialog-summary-label">{t("备注")}</span>
               <p>{detailModal.note}</p>
             </div>
           ) : null}
           {detailModal.output ? (
             <details className="result-detail-section" open>
-              <summary>模型输出</summary>
+              <summary>{t("模型输出")}</summary>
               <pre className="dialog-log">{formatStructuredDetail(detailModal.output)}</pre>
             </details>
           ) : null}
           {detailModal.verifier ? (
             <details className="result-detail-section">
-              <summary>验证证据</summary>
+              <summary>{t("验证证据")}</summary>
               <pre className="dialog-log">{formatStructuredDetail(detailModal.verifier)}</pre>
             </details>
           ) : null}
@@ -6895,7 +6939,7 @@ export function App() {
             </details>
           ) : null}
           <details className="result-detail-section" open={!detailModal.output}>
-            <summary>原始轨迹</summary>
+            <summary>{t("原始轨迹")}</summary>
             <pre className="dialog-log">{detailModal.rawLog}</pre>
           </details>
         </Modal>
@@ -6909,9 +6953,9 @@ function BenchPackPickerDialog({
   open,
   setOpen,
   onSelectBenchPack,
-  title = "新建标签页",
-  subtitle = "选择要在此工作区打开的基准包。",
-  actionLabel = "打开基准包"
+  title = t("新建标签页"),
+  subtitle = t("选择要在此工作区打开的基准包。"),
+  actionLabel = t("打开基准包")
 }: {
   inspections: BenchPackInspection[];
   open: boolean;
@@ -6975,7 +7019,7 @@ function BenchPackPickerDialog({
             <h3 className="dialog-title">{title}</h3>
             <p className="section-copy" style={{ marginTop: "12px" }}>{subtitle}</p>
           </div>
-          <button type="button" onClick={() => setOpen(false)} className="dialog-close-button" aria-label="关闭对话框">
+          <button type="button" onClick={() => setOpen(false)} className="dialog-close-button" aria-label={t("关闭对话框")}>
             <X size={16} />
           </button>
         </div>
@@ -6983,12 +7027,12 @@ function BenchPackPickerDialog({
         <div className="benchpack-picker-body">
           <div className="benchpack-picker-list">
             <label className="field-block">
-              <span className="field-label">搜索</span>
+              <span className="field-label">{t("搜索")}</span>
               <input
                 type="text"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="搜索基准包"
+                placeholder={t("搜索基准包")}
                 className="config-input"
               />
             </label>
@@ -7012,7 +7056,7 @@ function BenchPackPickerDialog({
                 </button>
               ))}
               {filteredInspections.length === 0 ? (
-                <div className="sidebar-empty">没有匹配搜索的基准包。</div>
+                <div className="sidebar-empty">{t("没有匹配搜索的基准包。")}</div>
               ) : null}
             </div>
           </div>
@@ -7021,28 +7065,28 @@ function BenchPackPickerDialog({
             {selectedInspection ? (
               <>
                 <div>
-                  <p className="eyebrow">基准包</p>
+                  <p className="eyebrow">{t("基准包")}</p>
                   <h3 className="panel-title" style={{ marginTop: "8px" }}>
                     {selectedInspection.manifest?.name ?? selectedInspection.id}
                   </h3>
                   <p className="section-copy" style={{ marginTop: "10px" }}>
-                    {selectedInspection.manifest?.description ?? "暂无描述。"}
+                    {selectedInspection.manifest?.description ?? t("暂无描述。")}
                   </p>
                 </div>
 
                 <div className="benchpack-picker-meta">
                   <div className="benchpack-stat-card">
-                    <span className="benchpack-stat-label">作者</span>
+                    <span className="benchpack-stat-label">{t("作者")}</span>
                     <span className="benchpack-stat-value benchpack-meta-value">
-                      {selectedInspection.manifest?.author ?? "未知"}
+                      {selectedInspection.manifest?.author ?? t("未知")}
                     </span>
                   </div>
                   <div className="benchpack-stat-card">
-                    <span className="benchpack-stat-label">测试数</span>
+                    <span className="benchpack-stat-label">{t("测试数")}</span>
                     <span className="benchpack-stat-value">{selectedInspection.scenarioCount ?? 0}</span>
                   </div>
                   <div className="benchpack-stat-card">
-                    <span className="benchpack-stat-label">版本</span>
+                    <span className="benchpack-stat-label">{t("版本")}</span>
                     <span className="benchpack-stat-value benchpack-meta-value">
                       {selectedInspection.manifest?.version ?? "n/a"}
                     </span>
@@ -7054,10 +7098,10 @@ function BenchPackPickerDialog({
                     {selectedInspection.status.replaceAll("_", " ")}
                   </span>
                   <span className="status-chip status-idle">
-                    {selectedInspection.manifest?.capabilities.tools ? "支持工具" : "不支持工具"}
+                    {selectedInspection.manifest?.capabilities.tools ? t("支持工具") : t("不支持工具")}
                   </span>
                   <span className="status-chip status-idle">
-                    {selectedInspection.manifest?.capabilities.verification ? "需要验证器" : "无额外依赖"}
+                    {selectedInspection.manifest?.capabilities.verification ? t("需要验证器") : t("无额外依赖")}
                   </span>
                 </div>
 
@@ -7075,8 +7119,8 @@ function BenchPackPickerDialog({
               </>
             ) : (
               <div className="entry-card" style={{ marginTop: "40px" }}>
-                <p className="eyebrow">未安装任何基准包</p>
-                <h3 className="panel-title" style={{ marginTop: "8px" }}>从设置安装基准包</h3>
+                <p className="eyebrow">{t("未安装任何基准包")}</p>
+                <h3 className="panel-title" style={{ marginTop: "8px" }}>{t("从设置安装基准包")}</h3>
                 <p className="section-copy" style={{ marginTop: "10px" }}>
                   BenchLocal now starts with zero installed Bench Packs. Open Settings, go to Bench Packs, and install one from the official registry.
                 </p>
@@ -7111,7 +7155,7 @@ function BenchPackPickerTrigger({
         disabled={disabled}
       >
         <Plus size={14} />
-        <span>新建标签页</span>
+        <span>{t("新建标签页")}</span>
       </button>
 
       <BenchPackPickerDialog
@@ -7208,7 +7252,7 @@ function WebBenchPackSection({
       );
       return true;
     } catch (error) {
-      console.warn(`框架就绪前已跳过 Web 基准包宿主事件 "${event}"。`, error);
+      console.warn(t("框架就绪前已跳过 Web 基准包宿主事件 \"{0}\"。", event), error);
       return false;
     }
   }, [bridgeTargetOrigin]);
@@ -7294,7 +7338,7 @@ function WebBenchPackSection({
 
     const requirePermission = (permission: string) => {
       if (!permissions.has(permission)) {
-        throw new Error(`Web 基准包权限被拒绝：${permission}。`);
+        throw new Error(t("Web 基准包权限被拒绝：{0}。", permission));
       }
     };
 
@@ -7358,7 +7402,7 @@ function WebBenchPackSection({
           case "inference.streamChat": {
             requirePermission("inference:stream");
             if (!request.streamId) {
-              throw new Error("流式推理需要流 ID。");
+              throw new Error(t("流式推理需要流 ID。"));
             }
 
             let unsubscribe: () => void = () => undefined;
@@ -7452,7 +7496,7 @@ function WebBenchPackSection({
             break;
           }
           default:
-            throw new Error(`不支持的 Web 基准包桥接方法：${request.method}。`);
+            throw new Error(t("不支持的 Web 基准包桥接方法：{0}。", request.method));
         }
       })().catch((error) => {
         postResponse(targetWindow, targetOrigin, request.requestId, error, false);
@@ -7484,9 +7528,9 @@ function WebBenchPackSection({
         <div className="empty-workspace benchmark-empty-state">
           <div className="empty-workspace-card benchmark-empty-card">
             <div className="benchmark-empty-icon"><CircleAlert size={18} /></div>
-            <p className="eyebrow">Web 基准包</p>
-            <h3 className="panel-title">该 Web 基准包缺少其托管入口。</h3>
-            <p className="section-copy">请从注册表更新或重新安装该基准包。</p>
+            <p className="eyebrow">{t("Web 基准包")}</p>
+            <h3 className="panel-title">{t("该 Web 基准包缺少其托管入口。")}</h3>
+            <p className="section-copy">{t("请从注册表更新或重新安装该基准包。")}</p>
           </div>
         </div>
       </section>
@@ -7497,35 +7541,35 @@ function WebBenchPackSection({
     <section className="web-benchpack-shell">
       <div className="web-benchpack-toolbar">
         <div>
-          <p className="eyebrow">交互式基准包</p>
+          <p className="eyebrow">{t("交互式基准包")}</p>
           <h2>{manifest.name}</h2>
         </div>
         <div className="section-actions">
           {isRunning ? (
             <button type="button" className="button-warn" onClick={requestStop} disabled={isStopping}>
               <Square size={14} />
-              {isStopping ? "停止中..." : "停止"}
+              {isStopping ? t("停止中...") : t("停止")}
             </button>
           ) : null}
           {loadedHistory ? (
             <button type="button" className="ghost-button" onClick={onClearHistory}>
               <RotateCcw size={14} />
-              返回实时
+              {t("返回实时")}
             </button>
           ) : null}
           <button type="button" className="ghost-button" onClick={onEditSampling}>
             <SlidersHorizontal size={14} />
-            采样参数
+            {t("采样参数")}
           </button>
           <button type="button" className="ghost-button" onClick={onEditModels}>
             <Bot size={14} />
-            编辑模型
+            {t("编辑模型")}
           </button>
         </div>
       </div>
       <div className="web-benchpack-status-row">
         <span className="status-chip status-idle">{manifest.version}</span>
-        <span className="status-chip status-idle">{selectedModels.length} 个已选模型</span>
+        <span className="status-chip status-idle">{t("{0} 个已选模型", selectedModels.length)}</span>
         {runSummary?.runId ? <span className="status-chip status-idle">{runSummary.runId}</span> : null}
       </div>
       <iframe
@@ -7650,10 +7694,10 @@ function BenchmarkSection({
     0
   );
   const currentExecutionModeLabel =
-    EXECUTION_MODE_OPTIONS.find((option) => option.value === executionMode)?.label ?? "运行模式";
+    t(EXECUTION_MODE_OPTIONS.find((option) => option.value === executionMode)?.label ?? "运行模式");
   const currentRunsPerTest = normalizeRunsPerTest(runsPerTest);
   const canReplayRun = isReplayMode && Boolean(runSummary) && isRunSummaryComplete(runSummary);
-  const runButtonLabel = isRunning ? "停止" : canReplayRun ? "回放" : isResumableRun ? "继续测试" : "运行";
+  const runButtonLabel = isRunning ? t("停止") : canReplayRun ? t("回放") : isResumableRun ? t("继续测试") : t("运行");
   const hasLiveActivity = isRunning || hasRetryActivity;
   const hasCompletedReplay =
     isReplayMode &&
@@ -7707,7 +7751,7 @@ function BenchmarkSection({
   const checkingAvailability = selectedModelAvailability.some((availability) => availability.status === "checking");
   const runSummaryComplete = isRunSummaryComplete(runSummary);
   const runStateClass = isRunning ? "status-live" : runSummary ? runSummaryComplete ? "status-done" : "status-preview" : "status-idle";
-  const runStateLabel = hasLiveActivity ? "进行中" : runSummary && !runSummaryComplete ? "未完成" : runSummary ? "已完成" : "空闲";
+  const runStateLabel = hasLiveActivity ? t("进行中") : runSummary && !runSummaryComplete ? t("未完成") : runSummary ? t("已完成~done") : t("空闲");
   const getDisplayedResult = (modelId: string, scenarioId: string) => {
     const liveResult = liveRun?.resultsByModel[modelId]?.find((candidate) => candidate.scenarioId === scenarioId);
     const persistedResult = isReplayMode
@@ -7853,16 +7897,16 @@ function BenchmarkSection({
             <div className="workspace-toolbar-heading">
               <div className="workspace-toolbar-title">{inspection.manifest?.name ?? inspection.id}</div>
               <div className="workspace-stat-chips">
-                <span className="status-chip status-preview">{inspection.scenarioCount ?? 0} 个场景</span>
-                <span className="status-chip status-idle">{selectedModels.length} 个模型</span>
-                <span className="status-chip status-idle">空闲</span>
+                <span className="status-chip status-preview">{t("{0} 个场景", inspection.scenarioCount ?? 0)}</span>
+                <span className="status-chip status-idle">{t("{0} 个模型", selectedModels.length)}</span>
+                <span className="status-chip status-idle">{t("空闲")}</span>
               </div>
             </div>
           </div>
           <div className="section-actions">
             <button type="button" onClick={onEditModels} className="ghost-button" disabled={isRunning}>
               <Bot size={14} />
-              编辑模型
+              {t("编辑模型")}
             </button>
             <span className={`status-chip ${statusClasses(inspection.status)}`}>
               {inspection.status.replaceAll("_", " ")}
@@ -7875,18 +7919,18 @@ function BenchmarkSection({
             <div className="benchmark-empty-icon">
               <CircleAlert size={22} />
             </div>
-            <p className="eyebrow">基准包不可用</p>
+            <p className="eyebrow">{t("基准包不可用")}</p>
             <h3 className="panel-title" style={{ marginTop: "8px" }}>
-              {inspection.manifest?.name ?? inspection.id} 尚无法运行
+              {t("{0} 尚无法运行", inspection.manifest?.name ?? inspection.id)}
             </h3>
             <p className="muted-copy" style={{ marginTop: "10px", maxWidth: "56ch" }}>
-              {inspection.error ?? "该基准包未安装或缺少其 BenchLocal 运行时入口。"}
+              {inspection.error ?? t("该基准包未安装或缺少其 BenchLocal 运行时入口。")}
             </p>
             <div className="category-chip-row" style={{ marginTop: "14px" }}>
               <span className={`status-chip ${statusClasses(inspection.status)}`}>
                 {inspection.status.replaceAll("_", " ")}
               </span>
-              <span className="status-chip status-idle">{selectedModels.length} 个已选模型</span>
+              <span className="status-chip status-idle">{t("{0} 个已选模型", selectedModels.length)}</span>
             </div>
           </div>
         </div>
@@ -7920,7 +7964,7 @@ function BenchmarkSection({
       ? "result-provider-error"
       : result.status === "pass" ? "result-pass" : result.status === "partial" ? "result-partial" : "result-fail";
     const durationLabel = formatDurationMs(result.timings?.durationMs);
-    const resultLabel = isProviderError ? "提供商错误" : resultStatusLabel(result.status);
+    const resultLabel = isProviderError ? t("提供商错误") : resultStatusLabel(result.status);
 
     return (
       <button
@@ -7948,8 +7992,8 @@ function BenchmarkSection({
           })
         }
         className={`result-icon-button ${tone}${durationLabel ? " has-duration" : ""}`}
-        title={durationLabel ? `${resultLabel} · ${durationLabel}` : resultLabel}
-        aria-label={`${model?.displayLabel ?? modelId}, ${scenarios.find((scenario) => scenario.id === scenarioId)?.title ?? scenarioId}：${resultLabel}${durationLabel ? `，${durationLabel}` : ""}`}
+        title={durationLabel ? t("{0} · {1}", resultLabel, durationLabel) : resultLabel}
+        aria-label={t("{0}, {1}：{2}{3}", model?.displayLabel ?? modelId, scenarios.find((scenario) => scenario.id === scenarioId)?.title ?? scenarioId, resultLabel, durationLabel ? t("，{0}", durationLabel) : "")}
       >
         <span className="result-icon-mark">
           {isProviderError ? <CircleAlert size={14} strokeWidth={2.4} /> : result.status === "pass" ? "✓" : result.status === "partial" ? "!" : "×"}
@@ -7966,20 +8010,20 @@ function BenchmarkSection({
           <div className="workspace-toolbar-heading">
             <div className="workspace-toolbar-title">{inspection.manifest?.name ?? inspection.id}</div>
             <div className="workspace-stat-chips">
-              <span className="status-chip status-preview">{inspection.scenarioCount ?? 0} 个场景</span>
-              <span className="status-chip status-idle">{selectedModels.length} 个模型</span>
+              <span className="status-chip status-preview">{t("{0} 个场景", inspection.scenarioCount ?? 0)}</span>
+              <span className="status-chip status-idle">{t("{0} 个模型", selectedModels.length)}</span>
               <span className={`status-chip ${runStateClass}`}>
                 {runStateLabel}
               </span>
               {totalResultCount > 0 && (hasLiveActivity || runSummary) ? (
                 <span className="run-progress-label">
-                  {completedResultCount} / {totalResultCount} 个结果
+                  {t("{0} / {1} 个结果", completedResultCount, totalResultCount)}
                 </span>
               ) : null}
               {loadedHistory && loadedHistory.mode !== "replay" ? (
                 <span className="history-context">
-                  正在查看 {formatCompactHistoryDate(loadedHistory.startedAt)}
-                  <button type="button" onClick={onClearHistory}>退出</button>
+                  {t("正在查看 {0}", formatCompactHistoryDate(loadedHistory.startedAt))}
+                  <button type="button" onClick={onClearHistory}>{t("退出")}</button>
                 </span>
               ) : null}
             </div>
@@ -7988,12 +8032,12 @@ function BenchmarkSection({
         <div className="section-actions">
           <button type="button" className="ghost-button" onClick={onOpenHistory} disabled={historyEntries.length === 0}>
             <RotateCcw size={14} />
-            历史记录
+            {t("历史记录")}
           </button>
           {canStartOver ? (
             <button type="button" className="ghost-button" onClick={onStartOver}>
               <RotateCcw size={14} />
-              重新开始
+              {t("重新开始")}
             </button>
           ) : null}
           <button
@@ -8003,7 +8047,7 @@ function BenchmarkSection({
             className={isRunning ? "button-warn" : "primary-button"}
           >
             {isRunning ? <Square size={15} /> : <Play size={15} />}
-            {isStopping ? "停止中..." : runButtonLabel}
+            {isStopping ? t("停止中...") : runButtonLabel}
           </button>
         </div>
       </div>
@@ -8012,7 +8056,7 @@ function BenchmarkSection({
         <div
           className="run-progress-track"
           role="progressbar"
-          aria-label="基准运行进度"
+          aria-label={t("基准运行进度")}
           aria-valuemin={0}
           aria-valuemax={totalResultCount}
           aria-valuenow={completedResultCount}
@@ -8025,7 +8069,7 @@ function BenchmarkSection({
         <div className="workspace-verifier-warning">
           <div className="workspace-verifier-warning-copy">
             <span className={`status-chip ${getVerifierStatusTone(verifierStatus?.verifiers.find((entry) => entry.required)?.status)}`}>
-              验证器阻塞
+              {t("验证器阻塞")}
             </span>
             <div>
               <div className="workspace-verifier-warning-title">{runBlocker.title}</div>
@@ -8035,11 +8079,11 @@ function BenchmarkSection({
           <div className="workspace-verifier-warning-actions">
             <button type="button" className="ghost-button ghost-button-compact" onClick={onRefreshVerification}>
               <RotateCcw size={14} />
-              刷新
+              {t("刷新")}
             </button>
             <button type="button" className="ghost-button ghost-button-compact" onClick={onOpenVerification}>
               <Wrench size={14} />
-              验证
+              {t("验证")}
             </button>
           </div>
         </div>
@@ -8050,18 +8094,18 @@ function BenchmarkSection({
           <div className="table-controls">
             <div className="table-controls-heading">
               <LayoutList size={16} />
-              <div className="workspace-toolbar-title">测试结果</div>
-              <div className="table-filter-group" aria-label="结果视图控制">
+              <div className="workspace-toolbar-title">{t("测试结果")}</div>
+              <div className="table-filter-group" aria-label={t("结果视图控制")}>
                 <button
                   type="button"
                   className={`ghost-button workspace-filter-button${issuesOnly ? " is-active" : ""}`}
                   onClick={() => setIssuesOnly((current) => !current)}
                   disabled={completedResultCount === 0}
                   aria-pressed={issuesOnly}
-                  aria-label="仅显示有问题的场景"
+                  aria-label={t("仅显示有问题的场景")}
                 >
                   <CircleAlert size={13} />
-                  问题
+                  {t("问题")}
                 </button>
                 <button
                   type="button"
@@ -8069,20 +8113,20 @@ function BenchmarkSection({
                   onClick={() => setSortByScore((current) => !current)}
                   disabled={!runSummary}
                   aria-pressed={sortByScore}
-                  aria-label="按得分对模型排序"
+                  aria-label={t("按得分对模型排序")}
                 >
                   <ArrowUp size={13} />
-                  得分
+                  {t("得分")}
                 </button>
                 <button
                   type="button"
                   className={`ghost-button workspace-filter-button${inspectorOpen ? " is-active" : ""}`}
                   onClick={() => setInspectorOpen((current) => !current)}
                   aria-pressed={inspectorOpen}
-                  aria-label="显示/隐藏所选场景详情"
+                  aria-label={t("显示/隐藏所选场景详情")}
                 >
                   <Sidebar size={13} />
-                  详情
+                  {t("详情")}
                 </button>
               </div>
             </div>
@@ -8098,10 +8142,10 @@ function BenchmarkSection({
                   disabled={hasLiveActivity}
                   aria-haspopup="menu"
                   aria-expanded={runModeOpen}
-                  title="运行模式"
+                  title={t("运行模式")}
                 >
                   <SlidersHorizontal size={14} />
-                  <span className="run-mode-button-label">运行模式：</span>
+                  <span className="run-mode-button-label">{t("运行模式：")}</span>
                   <span className="run-mode-button-value">{currentExecutionModeLabel}</span>
                   <ChevronDown size={15} />
                 </button>
@@ -8119,7 +8163,7 @@ function BenchmarkSection({
                           setRunModeOpen(false);
                         }}
                       >
-                        <span>{option.label}</span>
+                        <span>{t(option.label)}</span>
                       </button>
                     ))}
                   </div>
@@ -8136,10 +8180,10 @@ function BenchmarkSection({
                   disabled={hasLiveActivity}
                   aria-haspopup="menu"
                   aria-expanded={runsPerTestOpen}
-                  title="每个测试的运行次数"
+                  title={t("每个测试的运行次数")}
                 >
                   <RotateCcw size={14} />
-                  <span className="run-mode-button-label">Runs:</span>
+                  <span className="run-mode-button-label">{t("运行次数：")}</span>
                   <span className="run-mode-button-value">{currentRunsPerTest}x</span>
                   <ChevronDown size={15} />
                 </button>
@@ -8157,7 +8201,7 @@ function BenchmarkSection({
                           setRunsPerTestOpen(false);
                         }}
                       >
-                        <span>每个测试 {option} 次</span>
+                        <span>{t("每个测试 {0} 次", option)}</span>
                       </button>
                     ))}
                   </div>
@@ -8165,11 +8209,11 @@ function BenchmarkSection({
               </div>
               <button type="button" onClick={onEditSampling} className="ghost-button" disabled={hasLiveActivity}>
                 <SlidersHorizontal size={14} />
-                采样参数
+                {t("采样参数")}
               </button>
               <button type="button" onClick={onEditModels} className="ghost-button" disabled={hasLiveActivity}>
                 <Bot size={14} />
-                编辑模型
+                {t("编辑模型")}
               </button>
             </div>
           </div>
@@ -8181,26 +8225,26 @@ function BenchmarkSection({
                   <Bot size={22} />
                 </div>
                 <div className="table-empty-callout-copy">
-                  <h3 className="table-empty-callout-title">未选择模型</h3>
-                  <p className="muted-copy">请添加一个或多个模型以开始运行该基准包。</p>
+                  <h3 className="table-empty-callout-title">{t("未选择模型")}</h3>
+                  <p className="muted-copy">{t("请添加一个或多个模型以开始运行该基准包。")}</p>
                 </div>
                 <div className="table-empty-callout-actions">
                   <button type="button" className="ghost-button" onClick={onOpenHistory} disabled={historyEntries.length === 0}>
                     <RotateCcw size={14} />
-                    历史记录
+                    {t("历史记录")}
                   </button>
                   <button type="button" onClick={onEditModels} className="ghost-button" disabled={hasLiveActivity}>
                     <Bot size={14} />
-                    添加模型
+                    {t("添加模型")}
                   </button>
                 </div>
               </div>
             ) : (
               <>
-                <div ref={tableScrollViewportRef} className="table-scroll" role="region" aria-label="基准对比结果" tabIndex={0}>
+                <div ref={tableScrollViewportRef} className="table-scroll" role="region" aria-label={t("基准对比结果")} tabIndex={0}>
                   <table className="result-table">
                   <caption className="sr-only">
-                    正在查看 {inspection.manifest?.name ?? inspection.id} 的结果，对比 {selectedModels.length} 个模型、{scenarios.length} 个场景。
+                    {t("正在查看 {0} 的结果，对比 {1} 个模型、{2} 个场景。", inspection.manifest?.name ?? inspection.id, selectedModels.length, scenarios.length)}
                   </caption>
                   <colgroup>
                     <col className="model-column" />
@@ -8212,10 +8256,10 @@ function BenchmarkSection({
                   <thead>
                     <tr>
                       <th className={`scenario-row-label${stickyColumnShadow ? " has-scroll-shadow" : ""}`}>
-                        <span>模型</span>
+                        <span>{t("模型")}</span>
                       </th>
                       <th className="score-column-header">
-                        <span>得分</span>
+                        <span>{t("得分")}</span>
                       </th>
                       {displayedScenarios.map((scenario) => (
                         <th
@@ -8253,14 +8297,14 @@ function BenchmarkSection({
                                     className={`model-availability-dot ${modelAvailabilityChipClass(availability)}`}
                                     title={modelAvailabilityTitle(availability)}
                                     role="img"
-                                    aria-label={`模型状态：${modelAvailabilityLabel(availability)}`}
+                                    aria-label={t("模型状态：{0}", modelAvailabilityLabel(availability))}
                                   />
                                   <div
                                     className={`model-badge${isReplayMode ? "" : " model-badge-history"}`}
                                     title={
                                       isReplayMode
-                                        ? "回放模式使用保存的运行中的模型。"
-                                        : "该历史视图使用保存的运行中的模型。"
+                                        ? t("回放模式使用保存的运行中的模型。")
+                                        : t("该历史视图使用保存的运行中的模型。")
                                     }
                                   >
                                     {model.displayLabel}
@@ -8272,13 +8316,13 @@ function BenchmarkSection({
                                     className={`model-availability-dot ${modelAvailabilityChipClass(availability)}`}
                                     title={modelAvailabilityTitle(availability)}
                                     role="img"
-                                    aria-label={`模型状态：${modelAvailabilityLabel(availability)}`}
+                                    aria-label={t("模型状态：{0}", modelAvailabilityLabel(availability))}
                                   />
                                   <button
                                     type="button"
                                     className="model-badge model-badge-button"
                                     onClick={() => onEditModelAlias(model)}
-                                    title="编辑模型别名"
+                                    title={t("编辑模型别名")}
                                   >
                                     {model.displayLabel}
                                   </button>
@@ -8304,7 +8348,7 @@ function BenchmarkSection({
                   </table>
                 </div>
                 {issuesOnly && displayedScenarios.length === 0 ? (
-                  <div className="table-filter-empty">本次运行中没有部分通过、失败或提供商错误的结果。</div>
+                  <div className="table-filter-empty">{t("本次运行中没有部分通过、失败或提供商错误的结果。")}</div>
                 ) : null}
                 {hasHorizontalOverflow ? (
                   <div
@@ -8368,7 +8412,7 @@ function BenchmarkSection({
                       onClick={onRefreshModelAvailability}
                     >
                       <RotateCcw size={14} />
-                      {checkingAvailability ? "检查中..." : "刷新状态"}
+                      {checkingAvailability ? t("检查中...") : t("刷新状态")}
                     </button>
                   </div>
                   <div className="table-retry-actions-right">
@@ -8378,19 +8422,19 @@ function BenchmarkSection({
                           type="button"
                           className="ghost-button ghost-button-compact"
                           disabled={!canRetryResultCells || providerErrorRetryCells.length === 0}
-                          onClick={() => onRetryCells(providerErrorRetryCells, "提供商错误")}
+                          onClick={() => onRetryCells(providerErrorRetryCells, t("提供商错误~plural"))}
                         >
                           <CircleAlert size={14} />
-                          重试提供商错误
+                          {t("重试提供商错误")}
                         </button>
                         <button
                           type="button"
                           className="ghost-button ghost-button-compact"
                           disabled={!canRetryResultCells || failedRetryCells.length === 0}
-                          onClick={() => onRetryCells(failedRetryCells, "失败结果")}
+                          onClick={() => onRetryCells(failedRetryCells, t("失败结果"))}
                         >
                           <RotateCcw size={14} />
-                          重试失败结果
+                          {t("重试失败结果")}
                         </button>
                       </>
                     ) : null}
@@ -8404,18 +8448,18 @@ function BenchmarkSection({
             <section className="leaderboard" aria-labelledby={`leaderboard-${tabId}`}>
               <div className="leaderboard-header">
                 <div>
-                  <p className="eyebrow">运行摘要</p>
-                  <h3 id={`leaderboard-${tabId}`}>模型排名</h3>
+                  <p className="eyebrow">{t("运行摘要")}</p>
+                  <h3 id={`leaderboard-${tabId}`}>{t("模型排名")}</h3>
                 </div>
                 <div className="leaderboard-header-actions">
-                  <span className="muted-copy">按总分排序</span>
+                  <span className="muted-copy">{t("按总分排序")}</span>
                   <button
                     type="button"
                     className="ghost-button ghost-button-compact"
                     onClick={() => void openShareResults().catch((shareError) => console.error(shareError))}
                   >
                     <Share2 size={14} />
-                    分享运行
+                    {t("分享运行")}
                   </button>
                 </div>
               </div>
@@ -8426,8 +8470,7 @@ function BenchmarkSection({
                 const model = selectedModels.find((candidate) => candidate.id === modelId);
                 const hasScoreData = (runSummary.resultsByModel[modelId]?.length ?? 0) > 0;
                 const shareRunModeLabel =
-                  EXECUTION_MODE_OPTIONS.find((option) => option.value === (runSummary.executionMode ?? executionMode))?.label ??
-                  currentExecutionModeLabel;
+                  t(EXECUTION_MODE_OPTIONS.find((option) => option.value === (runSummary.executionMode ?? executionMode))?.label ?? "") || currentExecutionModeLabel;
                 const shareData = buildResultShareCardData({
                   runSummary,
                   model,
@@ -8444,13 +8487,13 @@ function BenchmarkSection({
 
                 return (
                   <article key={modelId} className="leaderboard-row">
-                    <span className="leaderboard-rank" aria-label={`第 ${index + 1} 名`}>{index + 1}</span>
+                    <span className="leaderboard-rank" aria-label={t("第 {0} 名", index + 1)}>{index + 1}</span>
                     <div className="leaderboard-model">
                       <h4>{model?.displayLabel ?? modelId}</h4>
                       <p>{modelSubtitle}</p>
                       {score.summary ? <p className="leaderboard-summary">{score.summary}</p> : null}
                     </div>
-                    <div className="leaderboard-categories" aria-label="分类得分">
+                    <div className="leaderboard-categories" aria-label={t("分类得分")}>
                       {score.categories.map((category) => (
                         <span key={category.id} className="leaderboard-category" title={category.id}>
                           <span>{category.label}</span>
@@ -8459,18 +8502,18 @@ function BenchmarkSection({
                       ))}
                     </div>
                     <div className="leaderboard-score">
-                      <span>得分</span>
+                      <span>{t("得分")}</span>
                       <strong>{hasScoreData ? score.totalScore : "—"}</strong>
                     </div>
                     <button
                       type="button"
                       className="ghost-button ghost-button-compact score-share-button"
                       disabled={!hasScoreData}
-                      title={hasScoreData ? "预览分享卡片" : "暂无可分享的结果"}
+                      title={hasScoreData ? t("预览分享卡片") : t("暂无可分享的结果")}
                       onClick={() => setShareCardData(shareData)}
                     >
                       <Share2 size={14} />
-                      分享
+                      {t("分享")}
                     </button>
                   </article>
                 );
@@ -8480,20 +8523,20 @@ function BenchmarkSection({
           ) : null}
         </div>
 
-        {inspectorOpen ? <aside className="workspace-inspector" aria-label="所选场景">
+        {inspectorOpen ? <aside className="workspace-inspector" aria-label={t("所选场景")}>
           <details className="scenario-focus scenario-focus-inspector" open>
             <summary className="scenario-focus-header">
               <div>
-                <p className="eyebrow">所选场景</p>
+                <p className="eyebrow">{t("所选场景")}</p>
                 <h3>
-                  {currentScenario ? `${currentScenario.id} · ${currentScenario.title}` : "未选择场景"}
+                  {currentScenario ? `${currentScenario.id} · ${currentScenario.title}` : t("未选择场景")}
                 </h3>
               </div>
               <div className="scenario-focus-summary-actions">
                 <button
                   type="button"
                   className="inspector-close-button"
-                  aria-label="关闭场景详情"
+                  aria-label={t("关闭场景详情")}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -8510,22 +8553,22 @@ function BenchmarkSection({
                 ? currentScenario.detailCards
                 : [
                     {
-                      title: "测试内容",
+                      title: t("测试内容"),
                       content:
                         currentScenario?.description ??
-                        "选择场景列以查看其测试目的与结果证据。"
+                        t("选择场景列以查看其测试目的与结果证据。")
                     },
                     {
-                      title: "提示词约定",
+                      title: t("提示词约定"),
                       content:
                         currentScenario?.description ??
-                        "当基准包提供时，场景相关的提示词与方法说明将显示在此处。"
+                        t("当基准包提供时，场景相关的提示词与方法说明将显示在此处。")
                     },
                     {
-                      title: "运行备注",
+                      title: t("运行备注"),
                       content: runSummary
-                        ? "选择结果单元格以查看模型输出、验证证据、产物、耗时与原始轨迹。"
-                        : "先运行该基准包，然后选择结果单元格查看其证据。"
+                        ? t("选择结果单元格以查看模型输出、验证证据、产物、耗时与原始轨迹。")
+                        : t("先运行该基准包，然后选择结果单元格查看其证据。")
                     }
                   ]
               ).map((card) => (
@@ -8552,6 +8595,7 @@ function ResultShareCardModal({
   data: ResultShareCardData;
   onClose: () => void;
 }) {
+  const locale = useLocale();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -8577,7 +8621,7 @@ function ResultShareCardModal({
     return () => {
       cancelled = true;
     };
-  }, [data]);
+  }, [data, locale]);
 
   const savePng = async () => {
     const blob = await createShareCardBlob(data);
@@ -8605,11 +8649,11 @@ function ResultShareCardModal({
 
   return (
     <Modal
-      title="分享结果卡片"
-      subtitle="为该模型结果生成一张适合社交分享的 PNG 预览。"
+      title={t("分享结果卡片")}
+      subtitle={t("为该模型结果生成一张适合社交分享的 PNG 预览。")}
       onClose={onClose}
       onSubmit={() => void savePng().catch((error) => console.error(error))}
-      submitLabel="保存 PNG"
+      submitLabel={t("保存 PNG")}
       size="wide"
       leadingActions={
         <button
@@ -8618,7 +8662,7 @@ function ResultShareCardModal({
           onClick={() => void copyImage().catch((error) => console.error(error))}
         >
           <Copy size={14} />
-          复制图片
+          {t("复制图片")}
         </button>
       }
     >
@@ -8629,22 +8673,22 @@ function ResultShareCardModal({
             width={SHARE_CARD_PIXEL_WIDTH}
             height={SHARE_CARD_PIXEL_HEIGHT}
             className="share-card-canvas"
-            aria-label={`${data.modelLabel} 的分享卡片预览`}
+            aria-label={t("{0} 的分享卡片预览", data.modelLabel)}
           />
         </div>
         <div className="share-card-meta-grid">
           <div>
-            <span className="share-card-meta-label">尺寸</span>
+            <span className="share-card-meta-label">{t("尺寸")}</span>
             <span className="share-card-meta-value">
               {SHARE_CARD_PIXEL_WIDTH}x{SHARE_CARD_PIXEL_HEIGHT} PNG
             </span>
           </div>
           <div>
-            <span className="share-card-meta-label">结果</span>
-            <span className="share-card-meta-value">{data.scoreValue} 分 / {data.completedCount} 个结果</span>
+            <span className="share-card-meta-label">{t("结果")}</span>
+            <span className="share-card-meta-value">{t("{0} 分 / {1} 个结果", data.scoreValue, data.completedCount)}</span>
           </div>
           <div>
-            <span className="share-card-meta-label">文件名</span>
+            <span className="share-card-meta-label">{t("文件名")}</span>
             <span className="share-card-meta-value">{data.fileName}</span>
           </div>
         </div>
@@ -8678,7 +8722,7 @@ function TabModelsModal({
   const orderedSelectedIds = editableSelections.map((selection) => selection.modelId).filter((modelId) => availableIds.has(modelId));
   const selectedIdSet = new Set(orderedSelectedIds);
   const providerOptions = [
-    { value: "all", label: "全部提供商" },
+    { value: "all", label: t("全部提供商") },
     ...Array.from(new Set(enabledModels.map((model) => model.provider)))
       .sort((left, right) => getProviderDisplayName(providers, left).localeCompare(getProviderDisplayName(providers, right)))
       .map((providerId) => ({
@@ -8687,12 +8731,12 @@ function TabModelsModal({
       }))
   ];
   const groupOptions = [
-    { value: "all", label: "全部分组" },
+    { value: "all", label: t("全部分组") },
     ...Array.from(new Set(enabledModels.map((model) => model.group.trim() || "__ungrouped__")))
       .sort((left, right) => left.localeCompare(right))
       .map((group) => ({
         value: group,
-        label: group === "__ungrouped__" ? "未分组" : group
+        label: group === "__ungrouped__" ? t("未分组") : group
       }))
   ];
   const filteredAvailableModels = enabledModels.filter((model) => {
@@ -8768,27 +8812,27 @@ function TabModelsModal({
 
   return (
     <Modal
-      title="编辑标签页模型"
+      title={t("编辑标签页模型")}
       onClose={onClose}
       onSubmit={onSubmit}
-      submitLabel="保存模型"
+      submitLabel={t("保存模型~plural")}
       size="wide"
     >
       <div className="tab-models-layout">
         <section className="tab-models-column">
           <div className="tab-models-column-header">
-            <h4 className="tab-models-column-title">可用模型</h4>
+            <h4 className="tab-models-column-title">{t("可用模型")}</h4>
             <span className="status-chip status-idle">{filteredAvailableModels.length}</span>
           </div>
           <div className="entry-grid two-col tab-models-filters">
             <InlineSelectField
-              label="提供商筛选"
+              label={t("提供商筛选")}
               value={providerFilter}
               options={providerOptions}
               onChange={setProviderFilter}
             />
             <InlineSelectField
-              label="分组筛选"
+              label={t("分组筛选")}
               value={groupFilter}
               options={groupOptions}
               onChange={setGroupFilter}
@@ -8797,14 +8841,14 @@ function TabModelsModal({
               label=""
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="搜索模型"
+              placeholder={t("搜索模型")}
               className="tab-models-search"
             />
           </div>
           <div className="tab-models-list">
             {filteredAvailableModels.length === 0 ? (
               <div className="tab-models-empty">
-                <p className="muted-copy">没有符合当前筛选条件的模型。</p>
+                <p className="muted-copy">{t("没有符合当前筛选条件的模型。")}</p>
               </div>
             ) : filteredAvailableModels.map((model) => {
               const isSelected = selectedIdSet.has(model.id);
@@ -8827,7 +8871,7 @@ function TabModelsModal({
                   </label>
 
                   <div className="tab-model-row-meta">
-                    <span className="status-chip status-idle">{model.group.trim() || "未分组"}</span>
+                    <span className="status-chip status-idle">{model.group.trim() || t("未分组")}</span>
                   </div>
                 </div>
               );
@@ -8837,13 +8881,13 @@ function TabModelsModal({
 
         <section className="tab-models-column">
           <div className="tab-models-column-header">
-            <h4 className="tab-models-column-title">已选模型</h4>
+            <h4 className="tab-models-column-title">{t("已选模型")}</h4>
             <span className="status-chip status-preview">{selectedModels.length}</span>
           </div>
           <div className="tab-models-list">
             {selectedModels.length === 0 ? (
               <div className="tab-models-empty">
-                <p className="muted-copy">从左侧选择模型以添加到该标签页。</p>
+                <p className="muted-copy">{t("从左侧选择模型以添加到该标签页。")}</p>
               </div>
             ) : selectedModels.map((model) => {
               const selection = selectionMap.get(model.id);
@@ -8885,11 +8929,11 @@ function TabModelsModal({
                     <input
                       type="text"
                       value={selection?.alias ?? ""}
-                      placeholder="可选别名"
+                      placeholder={t("可选别名")}
                       onChange={(event) => updateAlias(model.id, event.target.value)}
                       className="config-input tab-model-alias-input"
                     />
-                    <div className="tab-model-drag-handle" title="拖动以重新排序所选模型">
+                    <div className="tab-model-drag-handle" title={t("拖动以重新排序所选模型")}>
                       <GripVertical size={16} />
                     </div>
                   </div>
@@ -8928,18 +8972,18 @@ function ModelBrowserModal({
 
   return (
     <Modal
-      title="浏览模型"
-      subtitle={`从 ${state.providerName} 发现可用模型。`}
+      title={t("浏览模型")}
+      subtitle={t("从 {0} 发现可用模型。", state.providerName)}
       onClose={onClose}
       onSubmit={onSubmit}
-      submitLabel="使用该模型"
+      submitLabel={t("使用该模型")}
       size="wide"
     >
       <Field
         label=""
         value={state.query}
         onChange={onQueryChange}
-        placeholder="搜索模型"
+        placeholder={t("搜索模型")}
         className="model-browser-search"
       />
 
@@ -8955,7 +8999,7 @@ function ModelBrowserModal({
           </div>
         ) : filteredEntries.length === 0 ? (
           <div className="tab-models-empty">
-            <p className="muted-copy">没有符合当前搜索的模型。</p>
+            <p className="muted-copy">{t("没有符合当前搜索的模型。")}</p>
           </div>
         ) : (
           filteredEntries.map((entry) => (
@@ -8971,7 +9015,7 @@ function ModelBrowserModal({
               </div>
               <div className="model-browser-meta">
                 {entry.contextLength ? (
-                  <span className="status-chip status-idle">{entry.contextLength.toLocaleString()} 上下文</span>
+                  <span className="status-chip status-idle">{t("{0} 上下文", entry.contextLength.toLocaleString())}</span>
                 ) : null}
                 {entry.modality ? <span className="status-chip status-idle">{entry.modality}</span> : null}
                 {entry.pricing ? <span className="status-chip status-idle">{entry.pricing}</span> : null}
@@ -9003,11 +9047,11 @@ function SamplingModal({
 
   return (
     <Modal
-      title="采样参数"
-      subtitle={`为 ${benchPackName} 配置请求采样参数覆盖。留空的字段将使用基准包定义的默认值；未定义时 BenchLocal 会省略该参数，由推理后端使用其自身默认值。`}
+      title={t("采样参数")}
+      subtitle={t("为 {0} 配置请求采样参数覆盖。留空的字段将使用基准包定义的默认值；未定义时 BenchLocal 会省略该参数，由推理后端使用其自身默认值。", benchPackName)}
       onClose={onClose}
       onSubmit={onSubmit}
-      submitLabel="保存采样参数"
+      submitLabel={t("保存采样参数")}
       size="wide"
       leadingActions={
         <button
@@ -9016,7 +9060,7 @@ function SamplingModal({
           className="ghost-button"
         >
           <RotateCcw size={14} />
-          重置覆盖
+          {t("重置覆盖")}
         </button>
       }
     >
@@ -9029,7 +9073,7 @@ function SamplingModal({
               const value = defaults[field.key];
               return value === undefined ? null : (
                 <span key={field.key} className="settings-inline-meta">
-                  <strong>{field.label}:</strong> {value}
+                  <strong>{t(field.label)}:</strong> {value}
                 </span>
               );
             }).filter(Boolean).reduce<ReactNode[]>((items, item, index) => {
@@ -9043,16 +9087,16 @@ function SamplingModal({
         </div>
       ) : (
         <div className="helper-copy">
-          <p>This Bench Pack does not define recommended defaults yet. Blank sampling fields are not sent by BenchLocal, except for BenchLocal's request timeout default.</p>
+          <p>{t("该基准包尚未定义推荐默认值。空白采样字段不会发送给 BenchLocal，请求超时默认值除外。")}</p>
         </div>
       )}
       <div className="entry-grid two-col">
         {SAMPLING_FIELDS.map((field) => (
           <Field
             key={field.key}
-            label={field.label}
+            label={t(field.label)}
             value={form[field.key]}
-            placeholder={defaults[field.key] === undefined ? field.placeholder : `默认值：${defaults[field.key]}`}
+            placeholder={defaults[field.key] === undefined ? t(field.placeholder) : t("默认值：{0}", defaults[field.key])}
             onChange={(value) => onChange({
               ...form,
               [field.key]: value
@@ -9088,25 +9132,25 @@ function EmptyWorkspace({
     {
       key: "providers",
       complete: hasProviders,
-      title: "配置提供商",
-      detail: hasProviders ? `已配置 ${providerCount} 个` : "至少添加一个提供商端点。",
-      actionLabel: "提供商",
+      title: t("配置提供商"),
+      detail: hasProviders ? t("已配置 {0} 个", providerCount) : t("至少添加一个提供商端点。"),
+      actionLabel: t("提供商"),
       onAction: onOpenProviders
     },
     {
       key: "models",
       complete: hasModels,
-      title: "添加模型",
-      detail: hasModels ? `已配置 ${modelCount} 个` : "创建指向你的提供商的共享模型。",
-      actionLabel: "模型",
+      title: t("添加模型"),
+      detail: hasModels ? t("已配置 {0} 个", modelCount) : t("创建指向你的提供商的共享模型。"),
+      actionLabel: t("模型"),
       onAction: onOpenModels
     },
     {
       key: "benchpacks",
       complete: hasInstalledBenchPacks,
-      title: "安装基准包",
-      detail: hasInstalledBenchPacks ? `已安装 ${installedBenchPackCount} 个` : "从官方注册表至少安装一个基准包。",
-      actionLabel: "基准包",
+      title: t("安装基准包"),
+      detail: hasInstalledBenchPacks ? t("已安装 {0} 个", installedBenchPackCount) : t("从官方注册表至少安装一个基准包。"),
+      actionLabel: t("基准包"),
       onAction: onOpenBenchPacks
     }
   ];
@@ -9117,8 +9161,8 @@ function EmptyWorkspace({
         <div className="benchmark-empty-icon">
           <FolderOpen size={22} />
         </div>
-        <p className="eyebrow">暂无活动基准包</p>
-        <h3 className="panel-title">选择一个基准包以打开其工作区</h3>
+        <p className="eyebrow">{t("暂无活动基准包")}</p>
+        <h3 className="panel-title">{t("选择一个基准包以打开其工作区")}</h3>
         <p className="section-copy" style={{ marginTop: "12px", maxWidth: "52ch" }}>
           Complete the setup checklist below. BenchLocal keeps providers and models shared across the app, while each Bench Pack owns its own scenarios, sampling defaults, and scoring.
         </p>
@@ -9134,7 +9178,7 @@ function EmptyWorkspace({
                 <div className="settings-row-secondary">{item.detail}</div>
               </div>
               {item.complete ? (
-                <span className="status-chip status-done">已完成</span>
+                <span className="status-chip status-done">{t("已完成~done")}</span>
               ) : (
                 <button type="button" onClick={item.onAction} className="ghost-button ghost-button-compact">
                   {item.actionLabel}
@@ -9147,7 +9191,7 @@ function EmptyWorkspace({
         {hasInstalledBenchPacks && onSelectBenchPack ? (
           <button type="button" onClick={onSelectBenchPack} className="primary-button" style={{ marginTop: "20px" }}>
             <FolderOpen size={16} />
-            选择基准包
+            {t("选择基准包")}
           </button>
         ) : null}
       </div>
@@ -9157,8 +9201,8 @@ function EmptyWorkspace({
 
 function DetachedLogsWindow() {
   const [state, setState] = useState<DetachedLogsState>({
-    workspaceName: "暂无工作区",
-    tabTitle: "暂无活动标签页",
+    workspaceName: t("暂无工作区"),
+    tabTitle: t("暂无活动标签页"),
     eventCount: 0,
     events: []
   });
@@ -9247,7 +9291,7 @@ function DetachedLogsWindow() {
   }, [state, autoScroll]);
 
   useEffect(() => {
-    document.title = `运行日志 - ${state.workspaceName} - ${state.tabTitle}`;
+    document.title = t("运行日志 - {0} - {1}", state.workspaceName, state.tabTitle);
   }, [state.workspaceName, state.tabTitle]);
 
   return (
@@ -9259,14 +9303,14 @@ function DetachedLogsWindow() {
         <div className="section-actions">
           <label className="drawer-toggle">
             <input type="checkbox" checked={autoScroll} onChange={(event) => setAutoScroll(event.target.checked)} />
-            <span>自动滚动</span>
+            <span>{t("自动滚动")}</span>
           </label>
-          <span className="status-chip status-idle">{state.eventCount} 条事件</span>
+          <span className="status-chip status-idle">{t("{0} 条事件", state.eventCount)}</span>
           <button
             type="button"
             className="toolbar-icon-button"
-            aria-label="关闭窗口"
-            title="关闭窗口"
+            aria-label={t("关闭窗口")}
+            title={t("关闭窗口")}
             onClick={() => void window.benchlocal.logs.closeDetachedWindow()}
           >
             <X size={14} />
@@ -9284,7 +9328,7 @@ function DetachedLogsWindow() {
           ))}
         </div>
       ) : (
-        <div className="detached-logs-empty">暂无正在流式传输的运行日志。</div>
+        <div className="detached-logs-empty">{t("暂无正在流式传输的运行日志。")}</div>
       )}
     </div>
   );
@@ -9371,11 +9415,11 @@ function SettingsScene({
         <div className="settings-sidebar-header">
           <button type="button" onClick={onBack} className="settings-back-button">
             <ChevronLeft size={16} />
-            返回
+            {t("返回")}
           </button>
           <div className="settings-sidebar-title-block">
-            <p className="eyebrow">设置</p>
-            <h2 className="settings-sidebar-title">偏好设置</h2>
+            <p className="eyebrow">{t("设置")}</p>
+            <h2 className="settings-sidebar-title">{t("偏好设置")}</h2>
           </div>
         </div>
 
@@ -9386,10 +9430,10 @@ function SettingsScene({
               type="button"
               onClick={() => setSettingsTab(tab.id)}
               className={`settings-sidebar-item${settingsTab === tab.id ? " is-active" : ""}`}
-              title={tab.blurb}
+              title={t(tab.blurb)}
             >
               {tab.icon}
-              <span>{tab.label}</span>
+              <span>{t(tab.label)}</span>
             </button>
           ))}
         </div>
@@ -9460,26 +9504,26 @@ function SettingsScene({
 
             {settingsTab === "advanced" ? (
               <section className="advanced-grid">
-                <Panel title="文件系统" subtitle="BenchLocal 自有的存储路径与配置位置。" tone="sky" icon={<FolderOpen size={16} />}>
-                  <Field label="配置文件" value={loadState?.path ?? ""} readOnly onChange={() => undefined} />
-                  <Field label="运行存储" value={draft.run_storage_dir} onChange={(value) => updateDraft((current) => {
+                <Panel title={t("文件系统")} subtitle={t("BenchLocal 自有的存储路径与配置位置。")} tone="sky" icon={<FolderOpen size={16} />}>
+                  <Field label={t("配置文件")} value={loadState?.path ?? ""} readOnly onChange={() => undefined} />
+                  <Field label={t("运行存储")} value={draft.run_storage_dir} onChange={(value) => updateDraft((current) => {
                     current.run_storage_dir = value;
                     return current;
                   })} />
-                  <Field label="基准包存储" value={draft.benchpack_storage_dir} onChange={(value) => updateDraft((current) => {
+                  <Field label={t("基准包存储")} value={draft.benchpack_storage_dir} onChange={(value) => updateDraft((current) => {
                     current.benchpack_storage_dir = value;
                     return current;
                   })} />
-                  <Field label="日志存储" value={draft.log_storage_dir} onChange={(value) => updateDraft((current) => {
+                  <Field label={t("日志存储")} value={draft.log_storage_dir} onChange={(value) => updateDraft((current) => {
                     current.log_storage_dir = value;
                     return current;
                   })} />
-                  <Field label="缓存存储" value={draft.cache_dir} onChange={(value) => updateDraft((current) => {
+                  <Field label={t("缓存存储")} value={draft.cache_dir} onChange={(value) => updateDraft((current) => {
                     current.cache_dir = value;
                     return current;
                   })} />
                   <div className="helper-copy helper-copy-compact">
-                    <p>这些路径保存在<strong>~/.benchlocal/config.toml</strong>.</p>
+                    <p>{t("这些路径保存在")}<strong>~/.benchlocal/config.toml</strong>.</p>
                   </div>
                   <div className="settings-actions advanced-filesystem-actions">
                     <button
@@ -9489,7 +9533,7 @@ function SettingsScene({
                       className="ghost-button"
                     >
                       <RotateCcw size={14} />
-                      重置
+                      {t("重置")}
                     </button>
                     <button
                       type="button"
@@ -9498,7 +9542,7 @@ function SettingsScene({
                       className="primary-button"
                     >
                       <Save size={14} />
-                      保存
+                      {t("保存")}
                     </button>
                   </div>
                 </Panel>
@@ -9527,24 +9571,24 @@ function ProvidersView({
 
   return (
     <Panel
-      title="提供商注册表"
-      subtitle="跨所有基准包共享的提供商端点、凭据与启用状态。"
+      title={t("提供商注册表")}
+      subtitle={t("跨所有基准包共享的提供商端点、凭据与启用状态。")}
       tone="sky"
       icon={<Server size={16} />}
       actions={
-        <button type="button" onClick={onCreate} className="primary-button"><Plus size={14} />添加提供商</button>
+        <button type="button" onClick={onCreate} className="primary-button"><Plus size={14} />{t("添加提供商")}</button>
       }
     >
       <SettingsTableShell>
         <table className="settings-list-table">
           <thead>
             <tr>
-              <th>提供商</th>
-              <th>类型</th>
-              <th>状态</th>
-              <th>基础 URL</th>
-              <th>模型</th>
-              <th>操作</th>
+              <th>{t("提供商")}</th>
+              <th>{t("类型")}</th>
+              <th>{t("状态")}</th>
+              <th>{t("基础 URL")}</th>
+              <th>{t("模型")}</th>
+              <th>{t("操作")}</th>
             </tr>
           </thead>
           <tbody>
@@ -9569,8 +9613,8 @@ function ProvidersView({
                   <td>{linkedModels}</td>
                   <td>
                     <div className="settings-table-actions">
-                      <button type="button" onClick={() => onEdit(providerId)} className="ghost-button ghost-button-compact"><Pencil size={14} />编辑</button>
-                      <button type="button" onClick={() => onDuplicate(providerId)} className="ghost-button ghost-button-compact"><Copy size={14} />复制</button>
+                      <button type="button" onClick={() => onEdit(providerId)} className="ghost-button ghost-button-compact"><Pencil size={14} />{t("编辑")}</button>
+                      <button type="button" onClick={() => onDuplicate(providerId)} className="ghost-button ghost-button-compact"><Copy size={14} />{t("复制")}</button>
                     </div>
                   </td>
                 </tr>
@@ -9602,7 +9646,7 @@ function ModelsView({
   const [groupFilter, setGroupFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const providerOptions = [
-    { value: "all", label: "全部提供商" },
+    { value: "all", label: t("全部提供商") },
     ...Array.from(new Set(models.map((model) => model.provider)))
       .sort((left, right) => getProviderDisplayName(providers, left).localeCompare(getProviderDisplayName(providers, right)))
       .map((providerId) => ({
@@ -9611,12 +9655,12 @@ function ModelsView({
       }))
   ];
   const groupOptions = [
-    { value: "all", label: "全部分组" },
+    { value: "all", label: t("全部分组") },
     ...Array.from(new Set(models.map((model) => model.group.trim() || "__ungrouped__")))
       .sort((left, right) => left.localeCompare(right))
       .map((group) => ({
         value: group,
-        label: group === "__ungrouped__" ? "未分组" : group
+        label: group === "__ungrouped__" ? t("未分组") : group
       }))
   ];
   const filteredModels = models
@@ -9651,8 +9695,8 @@ function ModelsView({
 
   return (
     <Panel
-      title="共享模型注册表"
-      subtitle="跨所有基准包可用的模型标签、提供商映射与启用状态。"
+      title={t("共享模型注册表")}
+      subtitle={t("跨所有基准包可用的模型标签、提供商映射与启用状态。")}
       tone="orange"
       icon={<Bot size={16} />}
       actions={
@@ -9663,47 +9707,47 @@ function ModelsView({
           className="primary-button"
         >
           <Plus size={14} />
-          添加模型
+          {t("添加模型")}
         </button>
       }
     >
       <div className="settings-models-filter-row">
         <InlineSelectField
-          label="提供商筛选"
+          label={t("提供商筛选")}
           value={providerFilter}
           options={providerOptions}
           onChange={setProviderFilter}
         />
         <InlineSelectField
-          label="分组筛选"
+          label={t("分组筛选")}
           value={groupFilter}
           options={groupOptions}
           onChange={setGroupFilter}
         />
         <Field
-          label="搜索"
+          label={t("搜索")}
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="搜索名称、模型、ID、提供商或分组"
+          placeholder={t("搜索名称、模型、ID、提供商或分组")}
         />
       </div>
       <SettingsTableShell>
         <table className="settings-list-table">
           <thead>
             <tr>
-              <th>标签</th>
-              <th>状态</th>
-              <th>提供商</th>
-              <th>模型</th>
-              <th>分组</th>
-              <th>操作</th>
+              <th>{t("标签")}</th>
+              <th>{t("状态")}</th>
+              <th>{t("提供商")}</th>
+              <th>{t("模型")}</th>
+              <th>{t("分组")}</th>
+              <th>{t("操作")}</th>
             </tr>
           </thead>
           <tbody>
             {filteredModels.length === 0 ? (
               <tr>
                 <td colSpan={6}>
-                  <div className="settings-row-secondary">没有符合当前筛选条件的模型。</div>
+                  <div className="settings-row-secondary">{t("没有符合当前筛选条件的模型。")}</div>
                 </td>
               </tr>
             ) : (
@@ -9723,8 +9767,8 @@ function ModelsView({
                   <td>{model.group}</td>
                   <td>
                     <div className="settings-table-actions">
-                      <button type="button" onClick={() => onEdit(index)} className="ghost-button ghost-button-compact"><Pencil size={14} />编辑</button>
-                      <button type="button" onClick={() => onDuplicate(index)} className="ghost-button ghost-button-compact"><Copy size={14} />复制</button>
+                      <button type="button" onClick={() => onEdit(index)} className="ghost-button ghost-button-compact"><Pencil size={14} />{t("编辑")}</button>
+                      <button type="button" onClick={() => onDuplicate(index)} className="ghost-button ghost-button-compact"><Copy size={14} />{t("复制")}</button>
                     </div>
                   </td>
                 </tr>
@@ -9775,7 +9819,7 @@ function BenchPackRegistryView({
       return {
         id: entry.id,
         name: entry.name,
-        description: entry.description ?? "暂无描述。",
+        description: entry.description ?? t("暂无描述。"),
         version: entry.version,
         installedVersion: installed?.version,
         installed: Boolean(installed),
@@ -9794,16 +9838,16 @@ function BenchPackRegistryView({
       return {
         id: benchPackId,
         name: inspection?.manifest?.name ?? benchPackId,
-        description: inspection?.manifest?.description ?? "安装自 BenchLocal 之外维护的第三方来源。",
+        description: inspection?.manifest?.description ?? t("安装自 BenchLocal 之外维护的第三方来源。"),
         version: benchPack.version ?? inspection?.manifest?.version ?? "unknown",
         status: inspection?.status ?? "not_installed",
         sourceLabel:
           benchPack.source === "archive"
-            ? benchPack.url ?? "存档 URL"
+            ? benchPack.url ?? t("存档 URL")
             : benchPack.source === "github"
               ? benchPack.repo ?? "GitHub"
               : benchPack.source === "local"
-                ? benchPack.path ?? "本地路径"
+                ? benchPack.path ?? t("本地路径")
                 : benchPack.source,
         mutation
       } as const;
@@ -9812,22 +9856,22 @@ function BenchPackRegistryView({
   return (
     <section className="settings-section-stack">
       <Panel
-        title="官方基准包"
-        subtitle="从 BenchLocal 注册表安装和更新官方基准包。"
+        title={t("官方基准包")}
+        subtitle={t("从 BenchLocal 注册表安装和更新官方基准包。")}
         tone="sky"
         icon={<PlugZap size={16} />}
-        actions={<button type="button" onClick={onRefresh} className="ghost-button" disabled={hasActiveMutation}><RotateCcw size={14} />刷新注册表</button>}
+        actions={<button type="button" onClick={onRefresh} className="ghost-button" disabled={hasActiveMutation}><RotateCcw size={14} />{t("刷新注册表")}</button>}
       >
         {registryWarning ? <Banner tone="warning">{registryWarning}</Banner> : null}
         <SettingsTableShell>
           <table className="settings-list-table">
             <thead>
               <tr>
-                <th>名称</th>
-                <th>描述</th>
-                <th>版本</th>
-                <th>状态</th>
-                <th>操作</th>
+                <th>{t("名称")}</th>
+                <th>{t("描述")}</th>
+                <th>{t("版本")}</th>
+                <th>{t("状态")}</th>
+                <th>{t("操作")}</th>
               </tr>
             </thead>
             <tbody>
@@ -9836,8 +9880,8 @@ function BenchPackRegistryView({
                   <td colSpan={5}>
                     <div className="settings-row-secondary">
                       {registryWarning
-                        ? "官方注册表当前不可用。"
-                        : "官方注册表中暂无可用的基准包。"}
+                        ? t("官方注册表当前不可用。")
+                        : t("官方注册表中暂无可用的基准包。")}
                     </div>
                   </td>
                 </tr>
@@ -9873,7 +9917,7 @@ function BenchPackRegistryView({
                               disabled={disableRowAction || isMutating}
                             >
                               {row.mutation?.action === "update" ? <span className="spinner" /> : <ArrowUp size={14} />}
-                              {row.mutation?.action === "update" ? benchPackMutationLabel(row.mutation) : "升级"}
+                              {row.mutation?.action === "update" ? benchPackMutationLabel(row.mutation) : t("升级")}
                             </button>
                           ) : null}
                         </div>
@@ -9893,7 +9937,7 @@ function BenchPackRegistryView({
                               disabled={disableRowAction || isMutating}
                             >
                               {row.mutation?.action === "uninstall" ? <span className="spinner" /> : <Trash2 size={14} />}
-                              {row.mutation?.action === "uninstall" ? benchPackMutationLabel(row.mutation) : "卸载"}
+                              {row.mutation?.action === "uninstall" ? benchPackMutationLabel(row.mutation) : t("卸载")}
                             </button>
                           ) : (
                             <button
@@ -9903,7 +9947,7 @@ function BenchPackRegistryView({
                               disabled={disableRowAction || isMutating}
                             >
                               {row.mutation?.action === "install" ? <span className="spinner" /> : <Plus size={14} />}
-                              {row.mutation?.action === "install" ? benchPackMutationLabel(row.mutation) : "安装"}
+                              {row.mutation?.action === "install" ? benchPackMutationLabel(row.mutation) : t("安装")}
                             </button>
                           )}
                         </div>
@@ -9918,17 +9962,17 @@ function BenchPackRegistryView({
       </Panel>
 
       <Panel
-        title="第三方基准包"
-        subtitle="使用直接的产物 URL 从第三方来源安装基准包。"
+        title={t("第三方基准包")}
+        subtitle={t("使用直接的产物 URL 从第三方来源安装基准包。")}
         tone="orange"
         icon={<FolderOpen size={16} />}
       >
         <div className="helper-copy">
-          <p>Third-party Bench Packs are maintained by their authors, not by BenchLocal. Only install packages from sources you trust.</p>
+          <p>{t("第三方基准包由其作者维护，而非 BenchLocal。请只从你信任的来源安装软件包。")}</p>
         </div>
         <div className="benchpack-url-install-row">
           <Field
-            label="基准包 URL"
+            label={t("基准包 URL")}
             value={manualUrl}
             placeholder="https://example.com/my-benchpack.tar.gz"
             onChange={setManualUrl}
@@ -9949,7 +9993,7 @@ function BenchPackRegistryView({
             {benchPackMutations[THIRD_PARTY_INSTALL_MUTATION_ID] || benchPackMutations["third-party"] ? <span className="spinner" /> : <Plus size={14} />}
             {benchPackMutations[THIRD_PARTY_INSTALL_MUTATION_ID] || benchPackMutations["third-party"]
               ? benchPackMutationLabel(benchPackMutations["third-party"] ?? benchPackMutations[THIRD_PARTY_INSTALL_MUTATION_ID])
-              : "从 URL 安装"}
+              : t("从 URL 安装")}
           </button>
         </div>
 
@@ -9957,19 +10001,19 @@ function BenchPackRegistryView({
           <table className="settings-list-table">
             <thead>
               <tr>
-                <th>名称</th>
-                <th>描述</th>
-                <th>版本</th>
-                <th>来源</th>
-                <th>状态</th>
-                <th>操作</th>
+                <th>{t("名称")}</th>
+                <th>{t("描述")}</th>
+                <th>{t("版本")}</th>
+                <th>{t("来源")}</th>
+                <th>{t("状态")}</th>
+                <th>{t("操作")}</th>
               </tr>
             </thead>
             <tbody>
               {thirdPartyRows.length === 0 ? (
                 <tr>
                   <td colSpan={6}>
-                    <div className="settings-row-secondary">未安装第三方基准包。</div>
+                    <div className="settings-row-secondary">{t("未安装第三方基准包。")}</div>
                   </td>
                 </tr>
               ) : (
@@ -9999,7 +10043,7 @@ function BenchPackRegistryView({
                             disabled={disableRowAction || isMutating}
                           >
                             {row.mutation?.action === "uninstall" ? <span className="spinner" /> : <Trash2 size={14} />}
-                            {row.mutation?.action === "uninstall" ? benchPackMutationLabel(row.mutation) : "卸载"}
+                            {row.mutation?.action === "uninstall" ? benchPackMutationLabel(row.mutation) : t("卸载")}
                           </button>
                         </div>
                       </td>
@@ -10018,12 +10062,12 @@ function BenchPackRegistryView({
 function verifierModeLabel(mode: BenchLocalVerifierConfig["mode"]): string {
   switch (mode) {
     case "cloud":
-      return "BenchLocal 云";
+      return t("BenchLocal 云");
     case "custom_url":
-      return "自定义 URL";
+      return t("自定义 URL");
     case "docker":
     default:
-      return "本地 Docker";
+      return t("本地 Docker");
   }
 }
 
@@ -10066,8 +10110,8 @@ function VerificationView({
 
   return (
     <Panel
-      title="验证运行时"
-      subtitle="BenchLocal 通过本地 Docker 自动管理所需的验证器运行时。"
+      title={t("验证运行时")}
+      subtitle={t("BenchLocal 通过本地 Docker 自动管理所需的验证器运行时。")}
       tone="orange"
       icon={<Wrench size={16} />}
     >
@@ -10075,19 +10119,19 @@ function VerificationView({
         <table className="settings-list-table">
           <thead>
             <tr>
-              <th>基准包</th>
-              <th>模式</th>
-              <th>状态</th>
-              <th>端点</th>
-              <th>自动启动</th>
-              <th>操作</th>
+              <th>{t("基准包")}</th>
+              <th>{t("模式")}</th>
+              <th>{t("状态")}</th>
+              <th>{t("端点")}</th>
+              <th>{t("自动启动")}</th>
+              <th>{t("操作")}</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={6}>
-                  <div className="settings-row-secondary">当前没有已安装的基准包需要验证器。</div>
+                  <div className="settings-row-secondary">{t("当前没有已安装的基准包需要验证器。")}</div>
                 </td>
               </tr>
             ) : (
@@ -10102,8 +10146,8 @@ function VerificationView({
                       value={verifier.mode === "docker" ? verifier.mode : "docker"}
                       options={[
                         { value: "docker", label: verifierModeLabel("docker") },
-                        { value: "cloud", label: `${verifierModeLabel("cloud")}（即将支持）`, disabled: true },
-                        { value: "custom_url", label: `${verifierModeLabel("custom_url")}（即将支持）`, disabled: true }
+                        { value: "cloud", label: t("{0}（即将支持）", verifierModeLabel("cloud")), disabled: true },
+                        { value: "custom_url", label: t("{0}（即将支持）", verifierModeLabel("custom_url")), disabled: true }
                       ]}
                       onChange={(value) =>
                         onUpdate(benchPackId, verifierId, (current) => ({
@@ -10120,14 +10164,14 @@ function VerificationView({
                   </td>
                   <td>
                     <div className="settings-row-secondary">
-                      {runtime?.url ?? "由 BenchLocal 管理"}
+                      {runtime?.url ?? t("由 BenchLocal 管理")}
                     </div>
                     <div className="settings-row-secondary">
-                      Docker：{docker?.state === "ready"
-                        ? docker.details ?? "就绪"
+                      {t("Docker：")}{docker?.state === "ready"
+                        ? docker.details ?? t("就绪")
                         : docker?.state === "not_running"
-                          ? docker.details ?? "未运行"
-                          : docker?.details ?? "未安装"}
+                          ? docker.details ?? t("未运行")
+                          : docker?.details ?? t("未安装")}
                     </div>
                   </td>
                   <td>
@@ -10149,7 +10193,7 @@ function VerificationView({
                       {runtime?.status === "running" ? (
                         <button type="button" onClick={() => onStop(benchPackId)} className="ghost-button ghost-button-compact">
                           <Square size={14} />
-                          停止
+                          {t("停止")}
                         </button>
                       ) : (
                         <button
@@ -10159,7 +10203,7 @@ function VerificationView({
                           disabled={docker?.state !== "ready"}
                         >
                           <Play size={14} />
-                          启动
+                          {t("启动")}
                         </button>
                       )}
                       {runtime?.dockerImagePresent ? (
@@ -10170,7 +10214,7 @@ function VerificationView({
                           disabled={verifier.mode !== "docker" || docker?.state !== "ready" || runtime?.status === "running"}
                         >
                           <Trash2 size={14} />
-                          删除镜像
+                          {t("删除镜像")}
                         </button>
                       ) : null}
                     </div>
@@ -10249,65 +10293,65 @@ function AgentAccessView({
 
   return (
     <section className="advanced-grid">
-      <Panel title="Agent 访问" subtitle="面向 AI 智能体的本地 API 与事件流。" tone="sky" icon={<Server size={16} />}>
+      <Panel title={t("Agent 访问")} subtitle={t("面向 AI 智能体的本地 API 与事件流。")} tone="sky" icon={<Server size={16} />}>
         <div className="agent-experimental-message">
           <CircleAlert size={15} />
           <span>
-            该功能目前处于实验/预览阶段，欢迎反馈问题。
+            {t("该功能目前处于实验/预览阶段，欢迎反馈问题。")}
           </span>
         </div>
 
         <div className="agent-access-status-row">
           <span className={`status-chip ${state?.running ? "status-ready" : "status-inactive"}`}>
-            {state?.running ? "运行中" : state?.enabled ? "已停止" : "已禁用"}
+            {state?.running ? t("运行中~cap") : state?.enabled ? t("已停止~cap") : t("已禁用")}
           </span>
           {state?.baseUrl ? <span className="settings-row-secondary settings-mono-cell">{state.baseUrl}</span> : null}
-          {state ? <span className="status-chip status-idle">{state.access === "local_network" ? "局域网" : "仅本机"}</span> : null}
-          {state ? <span className="status-chip status-idle">{state.connectedClients} 个客户端</span> : null}
+          {state ? <span className="status-chip status-idle">{state.access === "local_network" ? t("局域网") : t("仅本机")}</span> : null}
+          {state ? <span className="status-chip status-idle">{t("{0} 个客户端", state.connectedClients)}</span> : null}
         </div>
 
         <div className="entry-grid two-col">
           <label className="field-block">
-            <span className="field-label">访问范围</span>
+            <span className="field-label">{t("访问范围")}</span>
             <select
               className="config-input"
               value={accessDraft}
               onChange={(event) => setAccessDraft(event.target.value as BenchLocalAgentAccess)}
             >
-              <option value="localhost">仅本机</option>
-              <option value="local_network">局域网</option>
+              <option value="localhost">{t("仅本机")}</option>
+              <option value="local_network">{t("局域网")}</option>
             </select>
           </label>
-          <FieldToggle label="本地 Agent API" checked={enabledDraft} onChange={setEnabledDraft} />
+          <FieldToggle label={t("本地 Agent API")} checked={enabledDraft} onChange={setEnabledDraft} />
         </div>
 
         <div className="entry-grid two-col">
           <Field
-            label="端口"
+            label={t("端口")}
             value={portDraft}
-            placeholder="自动"
+            placeholder={t("自动")}
             type="number"
             onChange={setPortDraft}
           />
         </div>
 
         <div className="agent-field-row agent-field-row-token">
-          <Field label="Bearer 令牌" value={state?.token ?? ""} readOnly onChange={() => undefined} />
+          <Field label={t("Bearer 令牌")} value={state?.token ?? ""} readOnly onChange={() => undefined} />
           <button type="button" className="ghost-button ghost-button-compact" onClick={() => copyText(state?.token)} disabled={!state?.token}>
             <Copy size={14} />
-            复制
+            {t("复制")}
           </button>
           <button type="button" className="ghost-button ghost-button-compact" onClick={onRegenerateToken}>
             <RotateCcw size={14} />
-            重新生成
+            {t("重新生成")}
           </button>
         </div>
 
         <div className="agent-field-row">
-          <Field label="Agent 指南 URL" value={agentGuideUrl} readOnly onChange={() => undefined} />
+          <Field label={t("Agent 指南 URL")} value={agentGuideUrl} readOnly onChange={() => undefined} />
           <button type="button" className="ghost-button ghost-button-compact" onClick={() => copyText(agentGuideUrl)} disabled={!agentGuideUrl}>
             <Copy size={14} />
-            复制
+            {t("复制")}
           </button>
         </div>
 
@@ -10315,7 +10359,7 @@ function AgentAccessView({
           <Field label="OpenAPI URL" value={openApiUrl} readOnly onChange={() => undefined} />
           <button type="button" className="ghost-button ghost-button-compact" onClick={() => copyText(openApiUrl)} disabled={!openApiUrl}>
             <Copy size={14} />
-            复制
+            {t("复制")}
           </button>
         </div>
 
@@ -10323,7 +10367,7 @@ function AgentAccessView({
           <Field label="MCP URL" value={mcpUrl} readOnly onChange={() => undefined} />
           <button type="button" className="ghost-button ghost-button-compact" onClick={() => copyText(mcpUrl)} disabled={!mcpUrl}>
             <Copy size={14} />
-            复制
+            {t("复制")}
           </button>
         </div>
 
@@ -10336,12 +10380,12 @@ function AgentAccessView({
         <div className="settings-actions">
           <button type="button" className="primary-button" onClick={apply}>
             <Save size={14} />
-            保存设置
+            {t("保存设置")}
           </button>
         </div>
       </Panel>
 
-      <Panel title="HTTP 接口" subtitle="命令使用 JSON 或 MCP；实时进度通过 Server-Sent Events 推送。" tone="slate" icon={<Logs size={16} />}>
+      <Panel title={t("HTTP 接口")} subtitle={t("命令使用 JSON 或 MCP；实时进度通过 Server-Sent Events 推送。")} tone="slate" icon={<Logs size={16} />}>
         <div className="agent-endpoint-list">
           {httpEndpoints.map(([method, path]) => (
             <div key={`${method}-${path}`} className="agent-endpoint-row">
@@ -10389,9 +10433,9 @@ function Panel({
 
 function DetailCard({ title, content }: { title: string; content: string }) {
   const toneClass =
-    title === "测试内容"
+    title === t("测试内容")
       ? "is-blue"
-      : title === "提示词约定"
+      : title === t("提示词约定")
         ? "is-amber"
         : "is-slate";
 
@@ -10476,13 +10520,13 @@ function HistoryModal({
 
   return (
     <div className="dialog-backdrop">
-      <div className="dialog-shell history-dialog-shell" role="dialog" aria-modal="true" aria-label={`${benchPackName} 运行历史`}>
+      <div className="dialog-shell history-dialog-shell" role="dialog" aria-modal="true" aria-label={t("{0} 运行历史", benchPackName)}>
         <div className="dialog-header">
           <div>
-            <h3 className="dialog-title">运行历史</h3>
+            <h3 className="dialog-title">{t("运行历史")}</h3>
             <p className="section-copy" style={{ marginTop: "12px" }}>{benchPackName}</p>
           </div>
-          <button type="button" onClick={onClose} className="dialog-close-button" aria-label="关闭对话框">
+          <button type="button" onClick={onClose} className="dialog-close-button" aria-label={t("关闭对话框")}>
             <X size={16} />
           </button>
         </div>
@@ -10495,24 +10539,24 @@ function HistoryModal({
                   <th className="history-select-column">
                     <input
                       type="checkbox"
-                      aria-label="全选历史记录"
+                      aria-label={t("全选历史记录")}
                       checked={allSelected}
                       disabled={entries.length === 0}
                       onChange={(event) => setSelectedRunIds(event.target.checked ? new Set(entryRunIds) : new Set())}
                     />
                   </th>
-                  <th>日期时间</th>
-                  <th>模式</th>
-                  <th>模型</th>
-                  <th>用例</th>
-                  <th>状态</th>
-                  <th>操作</th>
+                  <th>{t("日期时间")}</th>
+                  <th>{t("模式")}</th>
+                  <th>{t("模型")}</th>
+                  <th>{t("用例")}</th>
+                  <th>{t("状态")}</th>
+                  <th>{t("操作")}</th>
                 </tr>
               </thead>
               <tbody>
                 {entries.map((entry, index) => {
                   const executionModeLabel =
-                    EXECUTION_MODE_OPTIONS.find((option) => option.value === entry.executionMode)?.label ?? "未知";
+                    t(EXECUTION_MODE_OPTIONS.find((option) => option.value === entry.executionMode)?.label ?? "未知");
                   const checkboxId = `history-select-${index}-${entry.runId.replace(/[^a-z0-9_-]/gi, "-")}`;
 
                   return (
@@ -10521,7 +10565,7 @@ function HistoryModal({
                         <input
                           id={checkboxId}
                           type="checkbox"
-                          aria-label={`选择历史 ${new Date(entry.startedAt).toLocaleString()}`}
+                          aria-label={t("选择历史 {0}", new Date(entry.startedAt).toLocaleString())}
                           checked={selectedRunIds.has(entry.runId)}
                           onChange={(event) => toggleRunSelection(entry.runId, event.target.checked)}
                         />
@@ -10557,17 +10601,17 @@ function HistoryModal({
                             onClick={() => onOpenRun(entry.runId, "history")}
                           >
                             <FolderOpen size={14} />
-                            视图
+                            {t("视图")}
                           </button>
                           <button
                             type="button"
                             className="ghost-button ghost-button-compact"
                             disabled={Boolean(entry.error || entry.cancelled)}
-                            title={entry.error || entry.cancelled ? "只有已完成的运行才能回放" : "回放该保存的运行"}
+                            title={entry.error || entry.cancelled ? t("只有已完成的运行才能回放") : t("回放该保存的运行")}
                             onClick={() => onOpenRun(entry.runId, "replay")}
                           >
                             <Play size={14} />
-                            回放
+                            {t("回放")}
                           </button>
                         </div>
                       </td>
@@ -10587,7 +10631,7 @@ function HistoryModal({
             disabled={selectedCount === 0}
           >
             <Trash2 size={14} />
-            删除所选
+            {t("删除所选")}
           </button>
         </div>
       </div>
@@ -10610,16 +10654,16 @@ function VerifierPreparationModal({
 }) {
   return (
     <div className="dialog-backdrop">
-      <div className="dialog-shell verifier-preparation-shell" role="dialog" aria-modal="true" aria-label={`正在准备 ${benchPackName} 的验证器`}>
+      <div className="dialog-shell verifier-preparation-shell" role="dialog" aria-modal="true" aria-label={t("正在准备 {0} 的验证器", benchPackName)}>
         <div className="verifier-preparation-header">
           <div className="verifier-preparation-spinner">
             <span className="spinner" />
           </div>
           <div className="verifier-preparation-copy">
-            <p className="eyebrow">正在准备验证器</p>
+            <p className="eyebrow">{t("正在准备验证器")}</p>
             <h3 className="dialog-title">{benchPackName}</h3>
             <p className="section-copy" style={{ marginTop: "12px" }}>
-              BenchLocal 正在准备 <code className="detail-inline-code">{verifierId}</code>，完成后即可开始运行。
+              {t("BenchLocal 正在准备 ")}<code className="detail-inline-code">{verifierId}</code>{t("，完成后即可开始运行。")}
             </p>
           </div>
         </div>
@@ -10630,7 +10674,7 @@ function VerifierPreparationModal({
           <div className="dialog-footer verifier-preparation-footer">
             <button type="button" className="button-warn" onClick={onCancel} disabled={isCancelling}>
               {isCancelling ? <span className="spinner" /> : null}
-              {isCancelling ? "取消中..." : "取消运行"}
+              {isCancelling ? t("取消中...") : t("取消运行")}
             </button>
           </div>
         ) : null}
@@ -10662,8 +10706,8 @@ function ToastViewport({
             type="button"
             className="toast-dismiss"
             onClick={() => onDismiss(toast.id)}
-            aria-label="关闭通知"
-            title="关闭"
+            aria-label={t("关闭通知")}
+            title={t("关闭")}
           >
             <X size={14} />
           </button>
@@ -10714,14 +10758,14 @@ function AboutDialog({
     updateState?.status !== "unsupported";
   const updateActionLabel =
     updateState?.status === "downloaded"
-      ? "重启以更新"
+      ? t("重启以更新")
       : updateState?.status === "checking"
-        ? "检查中..."
+        ? t("检查中...")
         : updateState?.status === "downloading" || updateState?.status === "available"
           ? progressPercent !== null
-            ? `下载中 ${Math.round(progressPercent)}%`
-            : "下载中..."
-          : "检查更新";
+            ? t("下载中 {0}%", Math.round(progressPercent))
+            : t("下载中...")
+          : t("检查更新");
 
   useEffect(() => {
     const frameId = window.requestAnimationFrame(() => {
@@ -10750,23 +10794,23 @@ function AboutDialog({
 
   return (
     <div className="dialog-backdrop">
-      <div ref={dialogRef} className="about-dialog-shell" role="dialog" aria-modal="true" aria-label={`关于 ${productName}`} tabIndex={-1}>
-        <button type="button" onClick={onClose} className="dialog-close-button about-dialog-close" aria-label="关闭对话框">
+      <div ref={dialogRef} className="about-dialog-shell" role="dialog" aria-modal="true" aria-label={t("关于 {0}", productName)} tabIndex={-1}>
+        <button type="button" onClick={onClose} className="dialog-close-button about-dialog-close" aria-label={t("关闭对话框")}>
           <X size={16} />
         </button>
         <div className="about-dialog-body">
           <img src={benchlocalIcon} alt="" className="about-dialog-icon" />
           <h3 className="about-dialog-app-name">{productName}</h3>
-          {version ? <p className="about-dialog-version">版本 {version}</p> : null}
+          {version ? <p className="about-dialog-version">{t("版本 {0}", version)}</p> : null}
           {metadata?.copyright ? <p className="about-dialog-copyright">{metadata.copyright}</p> : null}
           <div className="about-dialog-update-card">
             <div className="about-dialog-update-header">
-              <span className="eyebrow">自我更新</span>
+              <span className="eyebrow">{t("自我更新")}</span>
               {updateState?.availableVersion ? <span className="status-chip status-idle">v{updateState.availableVersion}</span> : null}
             </div>
             <p className="about-dialog-update-message">{updateMessage}</p>
             <p className="about-dialog-update-meta">
-              更新源：{updateFeedUrl ? `${updateFeedLabel} (${updateFeedUrl})` : updateFeedLabel}
+              {t("更新源：{0}", updateFeedUrl ? `${updateFeedLabel} (${updateFeedUrl})` : updateFeedLabel)}
             </p>
             {progressPercent !== null ? (
               <div className="about-dialog-update-progress">
@@ -10776,7 +10820,7 @@ function AboutDialog({
                 <span className="about-dialog-update-progress-label">{Math.round(progressPercent)}%</span>
               </div>
             ) : null}
-            {checkedAtLabel ? <p className="about-dialog-update-meta">上次检查：{checkedAtLabel}</p> : null}
+            {checkedAtLabel ? <p className="about-dialog-update-meta">{t("上次检查：{0}", checkedAtLabel)}</p> : null}
             {updateState?.releaseNotes ? <pre className="about-dialog-update-notes">{updateState.releaseNotes}</pre> : null}
             <div className="about-dialog-update-actions">
               <button
@@ -10926,7 +10970,7 @@ function Modal({
             <h3 id={titleId} className="dialog-title">{title}</h3>
             {hasSubtitle ? <p id={subtitleId} className="section-copy" style={{ marginTop: "12px" }}>{subtitle}</p> : null}
           </div>
-          <button type="button" onClick={onClose} className="dialog-close-button" aria-label="关闭对话框">
+          <button type="button" onClick={onClose} className="dialog-close-button" aria-label={t("关闭对话框")}>
             <X size={16} />
           </button>
         </div>
@@ -11011,7 +11055,7 @@ function FieldToggle({
     <label className="field-block">
       <span className="field-label">{label}</span>
       <span className="field-toggle">
-        <span className="toggle-label">{checked ? "启用" : "禁用"}</span>
+        <span className="toggle-label">{checked ? t("启用") : t("禁用")}</span>
         <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
       </span>
     </label>

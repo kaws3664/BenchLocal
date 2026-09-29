@@ -1449,6 +1449,15 @@ pre {
   right: 0;
 }
 
+.settings-theme-menu-section {
+  padding: 8px 12px 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .workspace-grid {
   position: relative;
   display: block;

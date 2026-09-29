@@ -79,6 +79,7 @@ export type BenchLocalConfig = {
   registry: BenchLocalRegistryConfig;
   ui: {
     theme: string;
+    language: "zh-CN" | "en-US";
   };
   agent?: BenchLocalAgentConfig;
   providers: Record<string, BenchLocalProviderConfig>;
@@ -172,10 +173,12 @@ const ConfigSchema = z.object({
     }),
   ui: z
     .object({
-      theme: z.string().trim().min(1).default("system")
+      theme: z.string().trim().min(1).default("system"),
+      language: z.enum(["zh-CN", "en-US"]).default("zh-CN").catch("zh-CN")
     })
     .default({
-      theme: "system"
+      theme: "system",
+      language: "zh-CN"
   }),
   agent: z
     .object({
@@ -279,7 +282,8 @@ export function createDefaultConfig(): BenchLocalConfig {
       official_url: "https://raw.githubusercontent.com/stevibe/benchlocal-registry/main/registry.json"
     },
     ui: {
-      theme: "system"
+      theme: "system",
+      language: "zh-CN"
     },
     agent: {
       enabled: false,

@@ -37,6 +37,7 @@ export default defineConfig({
     plugins: [react()],
     resolve: {
       alias: {
+        "@": path.resolve(projectRoot, "src"),
         "@renderer": path.resolve(projectRoot, "src/renderer/src"),
         "@core": path.resolve(projectRoot, "../packages/benchlocal-core/src"),
         "@benchpack-host": path.resolve(projectRoot, "../packages/benchpack-host/src")

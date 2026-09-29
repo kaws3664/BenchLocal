@@ -1,4 +1,5 @@
 import { BrowserWindow } from "electron";
+import { tProcess as t } from "@/shared/i18n";
 import path from "node:path";
 import type { DetachedLogsState } from "@/shared/desktop-api";
 
@@ -10,10 +11,10 @@ let latestDetachedLogsState: DetachedLogsState | null = null;
 
 function buildDetachedLogsWindowTitle(state: DetachedLogsState | null): string {
   if (!state) {
-    return "运行日志";
+    return t("运行日志");
   }
 
-  return `运行日志 - ${state.workspaceName} - ${state.tabTitle}`;
+  return t("运行日志 - {0} - {1}", state.workspaceName, state.tabTitle);
 }
 
 function broadcastWindowClosed(): void {
