@@ -2,7 +2,7 @@
   "name": "benchlocal-app",
   "productName": "BenchLocal",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "BenchLocal 桌面应用：运行与管理 LLM 基准包（Bench Packs）。",
   "author": "stevibe",
   "type": "module",
